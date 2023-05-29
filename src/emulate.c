@@ -20,7 +20,6 @@ typedef struct {
     bool overflowConditionFlag;
 } PSTATE;
 
-
 void readFile(char *dst) {
     unsigned char buffer[34];
     FILE *ptr;
