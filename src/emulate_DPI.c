@@ -135,6 +135,6 @@ void parse_DPImmediate(uint32_t instruction) {
 
 int main(int argc, char **argv) {
     uint64_t i = 84; // 1010100
-    printf("%i\n", match_bits(i, 00, 1));
+    printf("%i\n", match_bits(i, 5, 1));
     return 0;
 }
