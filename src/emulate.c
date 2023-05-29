@@ -39,5 +39,5 @@ void readFile(char *dst) {
 
 int main(int argc, char **argv) {
     readFile(argv[1]);
-    return 1;
+    return EXIT_SUCCESS;
 }
