@@ -4,6 +4,8 @@
 #ifndef ARMV8_32_EMULATE_H
 #define ARMV8_32_EMULATE_H
 
+#define NUM_REGISTERS 31
+
 typedef struct {
     int8_t id; // id of register (0-32), 32 for zero register
     int64_t val; // value stored in the register

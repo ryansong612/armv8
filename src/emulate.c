@@ -9,6 +9,7 @@
 #define MAX_FILE_SIZE 1048576 // 2^20 bytes
 #define NOP 3573751839 // No operation instruction
 #define HALT 2315255808 // Termination instruction
+#define NUM_REGISTERS 31
 
 // Global variables
 uint8_t memory[MAX_FILE_SIZE];
@@ -76,7 +77,7 @@ void readFile(char *dst) {
 
 // ----------------------- INITIALIZING REGISTERS --------------------------
 
-GeneralPurposeRegister generalPurposeRegisters[31];
+GeneralPurposeRegister generalPurposeRegisters[NUM_REGISTERS];
 GeneralPurposeRegister zeroRegister = { .id = 31, .val = 0, .zeroRegisterFlag = true, .programCounterFlag = false };
 uint64_t programCounter = 0;
 PSTATE pStateRegister = { .carryConditionFlag = false,
