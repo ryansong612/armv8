@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <stdint.h>
+#include "custombit.h"
 #include "emulate.h"
 #include "readnwrite.h"
 
@@ -8,42 +8,13 @@
 #define ARITHMETIC_FLAG_BITS 2
 #define OPI_START_BIT 23
 
-
 // retrieving global variables from emulator
 extern GeneralPurposeRegister generalPurposeRegisters[NUM_REGISTERS];
 extern GeneralPurposeRegister zeroRegister;
 extern uint64_t programCounter;
 extern PSTATE pStateRegister;
 
-
-// ------------------------------------- CUSTOM HELPER FUNCTIONS ----------------------------------------------------
-// only works for registers
-int64_t get_bit_register64(int64_t num, int idx) {
-    return (num >> idx) & 1;
-}
-
-int32_t get_bit_register32(int32_t num, int idx) {
-    return (num >> idx) & 1;
-}
-
-// only works for instructions
-uint32_t get_bits(uint32_t num, int start, int end) {
-    uint32_t v = ((num >> start) & 1) << 1;
-    start++;
-    while (start <= end) {
-        v += ((num >> start) & 1);
-        v <<= 1;
-        start++;
-    }
-    return v;
-}
-
-// returns true if and only if num's start-end bits are the same as tgt
-// pre: tgt is not 0
-bool match_bits(uint64_t num, int64_t tgt, int idx) {
-    return (((num >> idx) & tgt)) == tgt;
-}
-
+// ------------------------------------- CUSTOM HELPER FUNCTIONS ---------------------------------------------------
 GeneralPurposeRegister* find_register(uint32_t key) {
     for (int i = 0; i < NUM_REGISTERS; i ++) {
         if (generalPurposeRegisters[i].id == key) {
@@ -211,6 +182,57 @@ void dpi_arithmetic(uint32_t instruction) {
 
 void dpi_wide_move(uint32_t instruction) {
 
+    GeneralPurposeRegister *rd = find_register(get_bits(instruction, 0, 4));
+
+    uint32_t hw = get_bits(instruction, 21, 22);
+    uint32_t imm16 = get_bits(instruction, 5, 20);
+    uint32_t opc = get_bits(instruction, 29, 30);
+    uint32_t sf = (instruction >> 31) & 1;
+    int64_t op = imm16 << (hw * 16);
+
+    int shift = hw * 16;
+    int end_shift = hw * 16 + 15;
+    int64_t left_part_64 = get_bits64((*rd).val, end_shift, 63) << end_shift;
+    uint64_t middle_part = op << shift;
+    uint64_t right_part = (uint64_t) get_bits64((*rd).val, 0, shift);
+
+
+
+    if (sf == 1) {
+        // bit-width access is 64-bit
+        switch (opc) {
+            case 0 :
+                write_64(rd, op);
+                break;
+            case 2:
+                write_64(rd, ~op); // not sure whether this is correct, check spec
+                break;
+            case 3:
+                write_64(rd, left_part_64 + middle_part + right_part); // not sure about the type conversion
+                break;
+            default:
+                break;
+        }
+        return;
+    }
+
+    if (sf == 0) {
+        // bit-width access is 32-bit
+        switch (opc) {
+            case 0:
+                write_32(rd, op);
+                break;
+            case 2:
+                write_32(rd, ~op);
+                break;
+            case 3:
+                write_32(rd, middle_part + right_part);
+                break;
+            default:
+                break;
+        }
+        return;
+    }
 }
 
 // Assuming all registers have their bit arrays reversed
@@ -227,10 +249,4 @@ void execute_DPImmediate(uint32_t instruction) {
     }
 
     // DO NOTHING for other values of opi
-}
-
-int main(int argc, char **argv) {
-    uint64_t i = 84; // 1010100
-    printf("%lli\n", get_bit_register64(i, 0));
-    return 0;
 }
