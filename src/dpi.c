@@ -43,10 +43,10 @@ void dpi_arithmetic(uint32_t instruction) {
         int64_t rn_val = read_64(rn);
         // access bit-width is 64-bit
         switch (get_bits(instruction, 29, 30)) {
-            case 0:
+            case 0b00:
                 write_64(rd, rn_val + imm12);
                 break;
-            case 1:
+            case 0b01:
                 write_64(rd, rn_val + imm12);
                 // reads the result after operation
                 int64_t res = read_64(rd);
@@ -74,10 +74,10 @@ void dpi_arithmetic(uint32_t instruction) {
                 pStateRegister.overflowConditionFlag = (sign_rn_val != sign_imm12)
                         && (sign_res != sign_rn_val);
                 break;
-            case 2:
+            case 0b10:
                 write_64(rd, rn_val - imm12);
                 break;
-            case 3:
+            case 0b11:
                 write_64(rd, rn_val - imm12);
                 // reads the result after operation
                 res = read_64(rd);
@@ -113,10 +113,10 @@ void dpi_arithmetic(uint32_t instruction) {
         int32_t rn_val = read_32(rn);
         // access bit-width is 32-bit
         switch (get_bits(instruction, 29, 30)) {
-            case 0:
+            case 0b00:
                 write_32(rd, rn_val + imm12);
                 break;
-            case 1:
+            case 0b01:
                 write_32(rd, rn_val + imm12);
                 // reads the result after operation
                 int32_t res = read_32(rd);
@@ -144,10 +144,10 @@ void dpi_arithmetic(uint32_t instruction) {
                 pStateRegister.overflowConditionFlag = (sign_rn_val != sign_imm12)
                                                        && (sign_res != sign_rn_val);
                 break;
-            case 2:
+            case 0b10:
                 write_32(rd, rn_val - imm12);
                 break;
-            case 3:
+            case 0b11:
                 write_32(rd, rn_val - imm12);
                 // reads the result after operation
                 res = read_32(rd);
@@ -203,13 +203,13 @@ void dpi_wide_move(uint32_t instruction) {
     if (sf == 1) {
         // bit-width access is 64-bit
         switch (opc) {
-            case 0 :
+            case 0b00 :
                 write_64(rd, op);
                 break;
-            case 2:
+            case 0b10:
                 write_64(rd, ~op); // not sure whether this is correct, check spec
                 break;
-            case 3:
+            case 0b11:
                 write_64(rd, left_part_64 + middle_part + right_part); // not sure about the type conversion
                 break;
             default:
@@ -221,13 +221,13 @@ void dpi_wide_move(uint32_t instruction) {
     if (sf == 0) {
         // bit-width access is 32-bit
         switch (opc) {
-            case 0:
+            case 0b00:
                 write_32(rd, op);
                 break;
-            case 2:
+            case 0b10:
                 write_32(rd, ~op);
                 break;
-            case 3:
+            case 0b11:
                 write_32(rd, middle_part + right_part);
                 break;
             default:
