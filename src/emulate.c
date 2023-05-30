@@ -130,80 +130,7 @@ bool match_bits(uint64_t num, uint64_t tgt, int idx) {
     return (((num >> idx) & tgt)) == tgt;
 }
 
-void dpi_arithmetic(uint32_t instruction) {
-    GeneralPurposeRegister *gpr;
-    uint32_t imm12 = get_bits(instruction, 10, 21);
-    // Check for sh (sign for shift)
-    if (match_bits(instruction, 1, 22)) {
-        // shift by 12-bits is needed
-        imm12 <<= 12;
-    }
-
-    if (match_bits(instruction, 1, 31)) {
-        // access bit-width is 64-bit
-        switch (get_bits(instruction, 29, 30)) {
-            case 0:
-                write_register_with64(gpr, (*gpr).val + imm12);
-                break;
-            case 1:
-                write_register_with64(gpr, (*gpr).val + imm12);
-                do something;
-                break;
-            case 2:
-                write_register_with64(gpr, (*gpr).val - imm12);
-                break;
-            case 3:
-                write_register_with64(gpr, (*gpr).val - imm12);
-                do something;
-                break;
-        }
-        return;
-    }
-
-    if (match_bits(instruction, 0, 31)) {
-        // access bit-width is 32-bit
-        switch (get_bits(instruction, 29, 30)) {
-            case 0:
-                write_register_with32(gpr, (*gpr).val + imm12);
-                break;
-            case 1:
-                write_register_with32(gpr, (*gpr).val + imm12);
-                do something;
-                break;
-            case 2:
-                write_register_with32(gpr, (*gpr).val - imm12);
-                break;
-            case 3:
-                write_register_with32(gpr, (*gpr).val - imm12);
-                do something;
-                break;
-        }
-        return;
-    }
-
-
-}
-
-void dpi_wide_move(uint32_t instruction) {
-    printf("Wide Move!");
-}
-
-// Assuming all registers have their bit arrays reversed
-void parse_DPImmediate(uint32_t instruction) {
-    // determining operation
-
-    // CASE 1: when opi is 010 -> arithmetic
-    if (match_bits(instruction, ARITHMETIC_FLAG_BITS, OPI_START_BIT)) {
-        dpi_arithmetic(instruction);
-    }
-        // CASE 2: when opi is 101 -> wide move
-    else if (match_bits(instruction, WIDE_MOVE_FLAG_BITS, OPI_START_BIT)) {
-        dpi_wide_move(instruction);
-    }
-
-    // DO NOTHING for other values of opi
-}
-
+// ------------------------------ PARSING INSTRUCTIONS --------------------------------------------
 bool emulate(void) {
     while (true) {
         uint32_t currentInstruction = instructions[programCounter / 4];
@@ -232,10 +159,7 @@ bool emulate(void) {
                 } else {
                     return false;
                 }
-
         }
-
-
     }
 }
 
