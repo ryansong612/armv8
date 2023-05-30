@@ -4,6 +4,8 @@
 #include "emulate.h"
 #include "readnwrite.h"
 
+#include "dpi.h"
+
 #define WIDE_MOVE_FLAG_BITS 5
 #define ARITHMETIC_FLAG_BITS 2
 #define OPI_START_BIT 23
