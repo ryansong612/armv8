@@ -91,24 +91,6 @@ void initializeRegisters(void) {
     }
 }
 // ----------------------- UTILS --------------------------------------------
-
-uint32_t read_register_32(GeneralPurposeRegister *gpr) {
-    uint32_t val = (*gpr).val;
-    return val;
-}
-
-uint64_t read_register_64(GeneralPurposeRegister *gpr) {
-    return (*gpr).val;
-}
-
-void write_register_with32(GeneralPurposeRegister *gpr, uint32_t v) {
-    (*gpr).val = v;
-}
-
-void write_register_with64(GeneralPurposeRegister *gpr, uint64_t v) {
-    (*gpr).val = v;
-}
-
 uint32_t get_bit(uint32_t num, int idx) {
     return ((num >> idx) & 1);
 }
