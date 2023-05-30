@@ -1,6 +1,3 @@
-#include <stdint.h>
-#include <stdbool.h>
-
 #ifndef ARMV8_32_EMULATE_H
 #define ARMV8_32_EMULATE_H
 

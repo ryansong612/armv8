@@ -5,7 +5,10 @@
 
 #include "emulate.h"
 #include "custombit.h"
-#include "dpi.h"
+#include "parseDPImmediate.h"
+#include "parseDPRegister.h"
+#include "parseLS.h"
+#include "parseBranches.h"
 
 #define MAX_FILE_SIZE 1048576 // 2^20 bytes
 #define NOP 3573751839 // No operation instruction
@@ -80,7 +83,9 @@ void initializeRegisters(void) {
 }
 
 bool emulate(void) {
+    bool error;
     while (true) {
+        error = true;
         uint32_t currentInstruction = instructions[programCounter / 4];
         // Special Instructions
         if (currentInstruction == HALT) {
@@ -94,23 +99,22 @@ bool emulate(void) {
         uint32_t op0 = get_bits(currentInstruction, 25, 28);
         switch(get_bits(op0, 1, 3)) {
             case 4:
-                execute_DPImmediate(currentInstruction);
+                error = execute_DPImmediate(currentInstruction);
                 break;
             case 5:
-                parse_DPRegister(currentInstruction);
+                // error = execute_branches(currentInstruction);
                 break;
             default:
-                if (get_bit(op0, 2) == 1 && get_bit(op0, 0) == 0) {
-                    parseLS(currentInstruction);
-                } else if (get_bit(op0, 2) == 1 && get_bit(op0, 1) == 0 && get_bit(op0, 0) == 1) {
-                    parseBranches(currentInstruction);
+                if (get_bits(op0, 2, 2) == 1 && get_bits(op0, 0, 0) == 0) {
+                    // error = execute_LS(currentInstruction);
                 } else {
-                    return false;
+                    // error = execute_Branches(currentInstruction);
                 }
 
         }
-
-
+        if (!error) {
+            printf("Error Detected");
+        }
     }
 }
 
@@ -118,10 +122,6 @@ int main(int argc, char **argv) {
     // read the file
     readFile("src/DataFile/start.elf");
     initializeRegisters();
-    bool success = emulate();
-    if (success) {
-        return EXIT_SUCCESS;
-    } else {
-        return EXIT_FAILURE;
-    }
+    emulate();
+    return EXIT_SUCCESS;
 }

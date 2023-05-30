@@ -1,10 +1,9 @@
-#include <stdio.h>
 #include <stdint.h>
 #include "custombit.h"
 #include "emulate.h"
 #include "readnwrite.h"
 
-#include "dpi.h"
+#include "parseDPImmediate.h"
 
 #define WIDE_MOVE_FLAG_BITS 5
 #define ARITHMETIC_FLAG_BITS 2
@@ -72,7 +71,7 @@ void dpi_arithmetic(uint32_t instruction) {
                 int64_t sign_imm12 = get_bit_register64(imm12, 63);
                 int64_t sign_res = get_bit_register64(res, 63);
                 pStateRegister.overflowConditionFlag = (sign_rn_val != sign_imm12)
-                        && (sign_res != sign_rn_val);
+                                                       && (sign_res != sign_rn_val);
                 break;
             case 0b10:
                 write_64(rd, rn_val - imm12);
@@ -238,17 +237,19 @@ void dpi_wide_move(uint32_t instruction) {
 }
 
 // Assuming all registers have their bit arrays reversed
-void execute_DPImmediate(uint32_t instruction) {
+bool execute_DPImmediate(uint32_t instruction) {
     // determining operation
 
     // CASE 1: when opi is 010 -> arithmetic
     if (match_bits(instruction, ARITHMETIC_FLAG_BITS, OPI_START_BIT)) {
         dpi_arithmetic(instruction);
     }
-    // CASE 2: when opi is 101 -> wide move
+        // CASE 2: when opi is 101 -> wide move
     else if (match_bits(instruction, WIDE_MOVE_FLAG_BITS, OPI_START_BIT)) {
         dpi_wide_move(instruction);
+    } else {
+        // DO NOTHING if no valid opi is found
     }
 
-    // DO NOTHING for other values of opi
+    return true;
 }
