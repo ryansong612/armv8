@@ -165,6 +165,7 @@ bool emulate(void) {
 
 int main(int argc, char **argv) {
     // read the file
+    // readFile(argv[0]); CHANGEEEEE
     readFile("src/DataFile/start.elf");
     initializeRegisters();
     bool success = emulate();
