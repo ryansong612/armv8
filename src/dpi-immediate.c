@@ -3,7 +3,6 @@
 #include "custombit.h"
 #include "emulate.h"
 #include "readnwrite.h"
-
 #include "dpi-immediate.h"
 
 #define WIDE_MOVE_FLAG_BITS 5
@@ -18,6 +17,10 @@ extern PSTATE pStateRegister;
 
 // ------------------------------------- CUSTOM HELPER FUNCTIONS -------------------------------------------------------
 GeneralPurposeRegister* find_register(uint32_t key) {
+    if (key == ZERO_REGISTER_ID) {
+        return &zeroRegister;
+    }
+
     for (int i = 0; i < NUM_REGISTERS; i ++) {
         if (generalPurposeRegisters[i].id == key) {
             return &generalPurposeRegisters[i];

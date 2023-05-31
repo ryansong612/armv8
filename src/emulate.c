@@ -5,6 +5,8 @@
 
 #include "emulate.h"
 #include "custombit.h"
+#include "dpi-immediate.h"
+#include "dpi-register.h"
 #include "parseLS.h"
 #include "parseBranches.h"
 #include "readnwrite.h"
@@ -107,16 +109,16 @@ bool emulate(void) {
         uint32_t op0 = get_bits(currentInstruction, 25, 28);
         switch(get_bits(op0, 1, 3)) {
             case 4:
-                error = execute_DPImmediate(currentInstruction);
+                error = execute_DPIImmediate(currentInstruction);
                 break;
             case 5:
-                // error = execute_branches(currentInstruction);
+                error = execute_branches(currentInstruction);
                 break;
             default:
                 if (get_bits(op0, 2, 2) == 1 && get_bits(op0, 0, 0) == 0) {
-                    // error = execute_LS(currentInstruction);
+                    error = singleDTI(currentInstruction);
                 } else {
-                    // error = execute_Branches(currentInstruction);
+                    error = execute_branches(currentInstruction);
                 }
 
         }
