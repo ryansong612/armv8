@@ -50,8 +50,8 @@ int64_t extendSignBit(uint32_t num, int numBits) {
     uint64_t extended = (uint64_t) num;
     uint64_t mask = 1LL << numBits;
     for (int i = numBits; i < 64; i++) {
-        num = num | mask;
-        mask << 1LL;
+        extended = extended | mask;
+        mask <<= 1LL;
     }
     return extended;
 }
