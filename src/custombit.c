@@ -39,3 +39,19 @@ int64_t get_bits64(int64_t num, int start, int end) {
 bool match_bits(uint64_t num, int64_t tgt, int idx) {
     return (((num >> idx) & tgt)) == tgt;
 }
+
+// extends a numBits-bit number to a 64-bit number, preserving the sign
+int64_t extendSignBit(uint32_t num, int numBits) {
+    // If sign bit is zero, just cast normally
+    if (get_bit_register32(num, numBits - 1) == 0) {
+        return (uint64_t) num;
+    }
+    // sign bit is 1
+    uint64_t extended = (uint64_t) num;
+    uint64_t mask = 1LL << numBits;
+    for (int i = numBits; i < 64; i++) {
+        num = num | mask;
+        mask << 1LL;
+    }
+    return extended;
+}
