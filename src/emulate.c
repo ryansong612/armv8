@@ -9,6 +9,7 @@
 #include "parseDPRegister.h"
 #include "parseLS.h"
 #include "parseBranches.h"
+#include "readnwrite.h"
 
 #define MAX_FILE_SIZE 1048576 // 2^20 bytes
 #define NOP 3573751839 // No operation instruction
@@ -19,7 +20,7 @@
 uint8_t memory[MAX_FILE_SIZE];
 uint32_t *instructions;
 
-// ---------------------------- READ + PARSING FILES ---------------------------
+// ------------------------------------------------- READ + PARSING FILES ----------------------------------------------
 // for debugging purposes
 void printBinary(uint32_t value) {
     // Determine the number of bits in uint64_t
@@ -65,20 +66,28 @@ void readFile(char *dst) {
     */
 }
 
-// ----------------------- INITIALIZING REGISTERS --------------------------
+// ---------------------------------------------- INITIALIZING REGISTERS -----------------------------------------------
 
-GeneralPurposeRegister generalPurposeRegisters[NUM_REGISTERS];
-GeneralPurposeRegister zeroRegister = { .id = 31, .val = 0, .zeroRegisterFlag = true, .programCounterFlag = false };
+GeneralPurposeRegister *generalPurposeRegisters[NUM_REGISTERS];
+GeneralPurposeRegister zeroRegister = { .id = NUM_REGISTERS,
+                                        .val = 0,
+                                        .zeroRegisterFlag = true,
+                                        .programCounterFlag = false };
 uint64_t programCounter = 0;
 PSTATE pStateRegister = { .carryConditionFlag = false,
-                          .negativeConditionFlag = false,
-                          .overflowConditionFlag = false,
-                          .zeroConditionFlag = false };
+        .negativeConditionFlag = false,
+        .overflowConditionFlag = false,
+        .zeroConditionFlag = false };
 
 void initializeRegisters(void) {
-    for (int i = 0; i < 31; i++) {
-        GeneralPurposeRegister newRegister = { .id = i, .val = 0, .zeroRegisterFlag = false, .programCounterFlag = false };
-        generalPurposeRegisters[i] = newRegister;
+    for (int8_t i = 0; i < 31; i++) {
+        GeneralPurposeRegister newRegister = { .id = i,
+                                               .val = 0,
+                                               .zeroRegisterFlag = false,
+                                               .programCounterFlag = false };
+        GeneralPurposeRegister *gpr = malloc(sizeof(GeneralPurposeRegister));
+        *gpr = newRegister;
+        generalPurposeRegisters[i] = gpr;
     }
 }
 
@@ -117,11 +126,68 @@ bool emulate(void) {
         }
     }
 }
+// -------------------------------------------------- TERMINATION ------------------------------------------------------
+void terminate(void) {
+    // Create file
+    FILE *out = fopen( ".out", "w" );
+    if( out == NULL ) {
+        fprintf( stderr, "Can’t create output.txt\n" ); exit(1);
+    }
+
+    // print all register values
+    fputs("These are the register values:\n", out);
+    for (int i = 0; i < NUM_REGISTERS; i++) {
+        char str[64];
+        sprintf(str, "%lld", read_64(generalPurposeRegisters[i]));
+        fputs(str, out); putc( '\n', out);
+    }
+    fputs("\n", out);
+
+    // print out PSTATE
+    fputs("These are the PSTATE values:\n", out);
+    if (pStateRegister.negativeConditionFlag) {
+        fputs("Negative Flag is true", out);
+    } else {
+        fputs("Negative Flag is false", out);
+    }
+    fputs("\n", out);
+    if (pStateRegister.carryConditionFlag) {
+        fputs("Carry Condition Flag is true", out);
+    } else {
+        fputs("Carry Condition Flag is false", out);
+    }
+    fputs("\n", out);
+    if (pStateRegister.overflowConditionFlag) {
+        fputs("Overflow Condition Flag is true", out);
+    } else {
+        fputs("Overflow Condition Flag is false", out);
+    }
+    fputs("\n", out);
+    if (pStateRegister.zeroConditionFlag) {
+        fputs("Zero Condition Flag is true", out);
+    } else {
+        fputs("Zero Condition Flag is false", out);
+    }
+    fputs("\n\n", out);
+
+    // print out all the rest of the memory
+    fputs("These are the non-zero memory values:\n", out);
+    for (int i = 0; i < MAX_FILE_SIZE; i++) {
+        if (memory[i] != 0) {
+            char str[8];
+            sprintf(str, "%d", memory[i]);
+            fputs(str, out); putc( '\n', out);
+        }
+    }
+
+    fclose(out);
+}
 
 int main(int argc, char **argv) {
     // read the file
     readFile("src/DataFile/start.elf");
     initializeRegisters();
     emulate();
+    terminate();
     return EXIT_SUCCESS;
 }
