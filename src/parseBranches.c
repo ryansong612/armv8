@@ -6,7 +6,7 @@
 #include "custombit.h"
 
 // Retrieve global variables
-extern GeneralPurposeRegister generalPurposeRegisters[NUM_REGISTERS];
+extern GeneralPurposeRegister *generalPurposeRegisters[NUM_REGISTERS];
 extern GeneralPurposeRegister zeroRegister;
 extern uint64_t programCounter;
 extern PSTATE pStateRegister;
