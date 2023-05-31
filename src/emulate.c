@@ -5,11 +5,10 @@
 
 #include "emulate.h"
 #include "custombit.h"
-#include "parseDPImmediate.h"
-#include "parseDPRegister.h"
 #include "parseLS.h"
 #include "parseBranches.h"
 #include "readnwrite.h"
+
 
 #define MAX_FILE_SIZE 1048576 // 2^20 bytes
 #define NOP 3573751839 // No operation instruction
