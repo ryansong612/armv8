@@ -3,6 +3,8 @@
 #include "emulate.h"
 #include "custombit.h"
 
+#define MAX_FILE_SIZE 1048576
+
 // Global variables
 extern GeneralPurposeRegister* generalPurposeRegisters[NUM_REGISTERS];
 extern GeneralPurposeRegister zeroRegister;
