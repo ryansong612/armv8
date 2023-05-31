@@ -70,9 +70,9 @@ void readFile(char *dst) {
 
 GeneralPurposeRegister *generalPurposeRegisters[NUM_REGISTERS];
 GeneralPurposeRegister zeroRegister = { .id = NUM_REGISTERS,
-                                        .val = 0,
-                                        .zeroRegisterFlag = true,
-                                        .programCounterFlag = false };
+        .val = 0,
+        .zeroRegisterFlag = true,
+        .programCounterFlag = false };
 uint64_t programCounter = 0;
 PSTATE pStateRegister = { .carryConditionFlag = false,
         .negativeConditionFlag = false,
@@ -82,9 +82,9 @@ PSTATE pStateRegister = { .carryConditionFlag = false,
 void initializeRegisters(void) {
     for (int8_t i = 0; i < 31; i++) {
         GeneralPurposeRegister newRegister = { .id = i,
-                                               .val = 0,
-                                               .zeroRegisterFlag = false,
-                                               .programCounterFlag = false };
+                .val = 0,
+                .zeroRegisterFlag = false,
+                .programCounterFlag = false };
         GeneralPurposeRegister *gpr = malloc(sizeof(GeneralPurposeRegister));
         *gpr = newRegister;
         generalPurposeRegisters[i] = gpr;
@@ -130,52 +130,71 @@ bool emulate(void) {
 void terminate(void) {
     // Create file
     FILE *out = fopen( ".out", "w" );
-    if( out == NULL ) {
-        fprintf( stderr, "Can’t create output.txt\n" ); exit(1);
-    }
 
     // print all register values
-    fputs("These are the register values:\n", out);
+    fputs("Registers:\n", out);
     for (int i = 0; i < NUM_REGISTERS; i++) {
-        char str[64];
-        sprintf(str, "%lld", read_64(generalPurposeRegisters[i]));
+        GeneralPurposeRegister currRegister = *generalPurposeRegisters[i];
+
+        // Mode
+        if (currRegister.mode) {
+            fputs("X", out);
+        } else {
+            fputs("W", out);
+        }
+
+        // Name
+        char name[2];
+        sprintf(name, "%i", i);
+        if (i < 10) {
+            fputs("0", out);
+        }
+        fputs(name, out);
+
+        fputs(" = ", out);
+
+        char str[16];
+        sprintf(str, "%x", read_64(generalPurposeRegisters[i]));
         fputs(str, out); putc( '\n', out);
     }
-    fputs("\n", out);
+    fputs("PC = ", out);
+    char pc[16];
+    sprintf(pc, "%x", programCounter);
+    fputs(pc, out); putc( '\n', out);
 
     // print out PSTATE
-    fputs("These are the PSTATE values:\n", out);
+    fputs("PSTATE: ", out);
     if (pStateRegister.negativeConditionFlag) {
-        fputs("Negative Flag is true", out);
+        fputs("N", out);
     } else {
-        fputs("Negative Flag is false", out);
+        fputs("-", out);
     }
-    fputs("\n", out);
-    if (pStateRegister.carryConditionFlag) {
-        fputs("Carry Condition Flag is true", out);
-    } else {
-        fputs("Carry Condition Flag is false", out);
-    }
-    fputs("\n", out);
-    if (pStateRegister.overflowConditionFlag) {
-        fputs("Overflow Condition Flag is true", out);
-    } else {
-        fputs("Overflow Condition Flag is false", out);
-    }
-    fputs("\n", out);
     if (pStateRegister.zeroConditionFlag) {
-        fputs("Zero Condition Flag is true", out);
+        fputs("Z", out);
     } else {
-        fputs("Zero Condition Flag is false", out);
+        fputs("-", out);
     }
-    fputs("\n\n", out);
+    if (pStateRegister.carryConditionFlag) {
+        fputs("C", out);
+    } else {
+        fputs("-", out);
+    }
+    if (pStateRegister.overflowConditionFlag) {
+        fputs("V", out);
+    } else {
+        fputs("-", out);
+    }
+    fputs("\n", out);
 
     // print out all the rest of the memory
-    fputs("These are the non-zero memory values:\n", out);
+    fputs("Non-zero memory:\n", out);
     for (int i = 0; i < MAX_FILE_SIZE; i++) {
         if (memory[i] != 0) {
-            char str[8];
-            sprintf(str, "%d", memory[i]);
+            char name[8];
+            sprintf(name, "0x%x: ", i);
+            fputs(name, out);
+            char str[64];
+            sprintf(str, "0x%x", memory[i]);
             fputs(str, out); putc( '\n', out);
         }
     }
@@ -187,7 +206,7 @@ int main(int argc, char **argv) {
     // read the file
     readFile("src/DataFile/start.elf");
     initializeRegisters();
-    emulate();
+    //emulate();
     terminate();
     return EXIT_SUCCESS;
 }
