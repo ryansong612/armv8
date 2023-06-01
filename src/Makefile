@@ -7,13 +7,14 @@ CFLAGS  ?= -std=c17 -g\
 
 .PHONY: all clean
 
-all: assemble emulate
+all: parse.c
 
-assemble: assemble.o
-emulate: emulate.o
+#assemble: assemble.o
+#emulate: emulate.o
+parse: parse.o
 
 clean:
-	$(RM) *.o assemble emulate
+	$(RM) *.o parse #assemble emulate
 	
 emulate:       emulate.o custombit.o dpi-immediate.o dpi-register.o parseLS.o parseBranches.o readnwrite.o
 

@@ -120,7 +120,6 @@ bool emulate(void) {
                 } else {
                     error = execute_branches(currentInstruction);
                 }
-
         }
         if (!error) {
             printf("Error Detected");
@@ -205,6 +204,7 @@ void terminate(void) {
 
 int main(int argc, char **argv) {
     // read the file
+    // readFile(argv[0]); CHANGEEEEE
     readFile("src/DataFile/start.elf");
     initializeRegisters();
     //emulate();
