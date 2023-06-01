@@ -29,7 +29,7 @@ GeneralPurposeRegister* find_register(uint32_t key) {
     return NULL;
 }
 
-void arithmetic_helper_64(GeneralPurposeRegister *rd, uint32_t instruction, int64_t rn_val, uint32_t op2) {
+void arithmetic_helper_64(GeneralPurposeRegister *rd, uint32_t instruction, int64_t rn_val, int32_t op2) {
     // case: opc (29-30)
     switch (get_bits(instruction, 29, 30)) {
         case ADD:
@@ -98,7 +98,7 @@ void arithmetic_helper_64(GeneralPurposeRegister *rd, uint32_t instruction, int6
     }
 }
 
-void arithmetic_helper_32(GeneralPurposeRegister *rd, uint32_t instruction, int32_t rn_val, uint32_t op2) {
+void arithmetic_helper_32(GeneralPurposeRegister *rd, uint32_t instruction, int32_t rn_val, int32_t op2) {
     // case: opc (29-30)
     switch (get_bits(instruction, 29, 30)) {
         case ADD:
@@ -139,7 +139,7 @@ void arithmetic_helper_32(GeneralPurposeRegister *rd, uint32_t instruction, int3
         case SUBS:
             write_32(rd, rn_val - op2);
             // reads the result after operation
-            res = read_64(rd);
+            res = read_32(rd);
             // updates pState flag
             pStateRegister.negativeConditionFlag = get_bit_register32(res, 31);
 
@@ -204,8 +204,8 @@ void dpi_wide_move(uint32_t instruction) {
     uint32_t sf = (instruction >> 31) & 1;
     int64_t op = imm16 << (hw * 16);
 
-    int shift = hw * 16;
-    int end_shift = hw * 16 + 15;
+    int shift = (int) hw * 16;
+    int end_shift = (int) hw * 16 + 15;
     int64_t left_part_64 = get_bits64((*rd).val, end_shift, 63) << end_shift;
     uint64_t middle_part = op << shift;
     uint64_t right_part = (uint64_t) get_bits64((*rd).val, 0, shift);
