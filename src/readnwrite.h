@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 #include "emulate.h"
 
 #ifndef ARMV8_32_READNWRITE_H

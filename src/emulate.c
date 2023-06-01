@@ -3,32 +3,25 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define WIDE_MOVE_FLAG_BITS 5
-#define ARITHMETIC_FLAG_BITS 2
-#define OPI_START_BIT 23
+#include "emulate.h"
+#include "custombit.h"
+#include "dpi-immediate.h"
+#include "dpi-register.h"
+#include "parseLS.h"
+#include "parseBranches.h"
+#include "readnwrite.h"
+
+
 #define MAX_FILE_SIZE 1048576 // 2^20 bytes
 #define NOP 3573751839 // No operation instruction
 #define HALT 2315255808 // Termination instruction
+#define NUM_REGISTERS 31
 
 // Global variables
 uint8_t memory[MAX_FILE_SIZE];
 uint32_t *instructions;
 
-typedef struct {
-    int8_t id; // id of register (0-32), 32 for zero register
-    int64_t val; // value stored in the register
-    bool zeroRegisterFlag; // 1 if it is a zero register
-    bool programCounterFlag; // 1 if it is a program counter
-} GeneralPurposeRegister;
-
-typedef struct {
-    bool negativeConditionFlag;
-    bool zeroConditionFlag;
-    bool carryConditionFlag;
-    bool overflowConditionFlag;
-} PSTATE;
-
-// ---------------------------- READ + PARSING FILES ---------------------------
+// ------------------------------------------------- READ + PARSING FILES ----------------------------------------------
 // for debugging purposes
 void printBinary(uint32_t value) {
     // Determine the number of bits in uint64_t
@@ -62,7 +55,7 @@ void readFile(char *dst) {
     fread(memory, 1, fileSize, ptr);
 
     // Chunking them into instructions (4 bytes)
-    size_t numInstructions = fileSize / sizeof(uint32_t);
+    // size_t numInstructions = fileSize / sizeof(uint32_t);
     instructions = (uint32_t *)memory;
 
     /*
@@ -74,47 +67,35 @@ void readFile(char *dst) {
     */
 }
 
-// ----------------------- INITIALIZING REGISTERS --------------------------
+// ---------------------------------------------- INITIALIZING REGISTERS -----------------------------------------------
 
-GeneralPurposeRegister generalPurposeRegisters[31];
-GeneralPurposeRegister zeroRegister = { .id = 31, .val = 0, .zeroRegisterFlag = true, .programCounterFlag = false };
+GeneralPurposeRegister *generalPurposeRegisters[NUM_REGISTERS];
+GeneralPurposeRegister zeroRegister = { .id = NUM_REGISTERS,
+        .val = 0,
+        .zeroRegisterFlag = true,
+        .programCounterFlag = false };
 uint64_t programCounter = 0;
 PSTATE pStateRegister = { .carryConditionFlag = false,
-                          .negativeConditionFlag = false,
-                          .overflowConditionFlag = false,
-                          .zeroConditionFlag = false };
+        .negativeConditionFlag = false,
+        .overflowConditionFlag = false,
+        .zeroConditionFlag = false };
 
 void initializeRegisters(void) {
-    for (int i = 0; i < 31; i++) {
-        GeneralPurposeRegister newRegister = { .id = i, .val = 0, .zeroRegisterFlag = false, .programCounterFlag = false };
-        generalPurposeRegisters[i] = newRegister;
+    for (int8_t i = 0; i < 31; i++) {
+        GeneralPurposeRegister newRegister = { .id = i,
+                .val = 0,
+                .zeroRegisterFlag = false,
+                .programCounterFlag = false };
+        GeneralPurposeRegister *gpr = malloc(sizeof(GeneralPurposeRegister));
+        *gpr = newRegister;
+        generalPurposeRegisters[i] = gpr;
     }
 }
-// ----------------------- UTILS --------------------------------------------
-uint32_t get_bit(uint32_t num, int idx) {
-    return ((num >> idx) & 1);
-}
 
-uint32_t get_bits(uint32_t num, int start, int end) {
-    uint32_t v = ((num >> start) & 1) << 1;
-    start++;
-    while (start <= end) {
-        v += ((num >> start) & 1);
-        v = v << 1;
-        start++;
-    }
-    return v;
-}
-
-// returns true if and only if num's start-end bits are the same as tgt
-// pre: tgt is not 0
-bool match_bits(uint64_t num, uint64_t tgt, int idx) {
-    return (((num >> idx) & tgt)) == tgt;
-}
-
-// ------------------------------ PARSING INSTRUCTIONS --------------------------------------------
 bool emulate(void) {
+    bool error;
     while (true) {
+        error = true;
         uint32_t currentInstruction = instructions[programCounter / 4];
         // Special Instructions
         if (currentInstruction == HALT) {
@@ -128,21 +109,97 @@ bool emulate(void) {
         uint32_t op0 = get_bits(currentInstruction, 25, 28);
         switch(get_bits(op0, 1, 3)) {
             case 4:
-                parse_DPImmediate(currentInstruction);
+                error = execute_DPIImmediate(currentInstruction);
                 break;
             case 5:
-                parse_DPRegister(currentInstruction);
+                error = execute_branches(currentInstruction);
                 break;
             default:
-                if (get_bit(op0, 2) == 1 && get_bit(op0, 0) == 0) {
-                    parseLS(currentInstruction);
-                } else if (get_bit(op0, 2) == 1 && get_bit(op0, 1) == 0 && get_bit(op0, 0) == 1) {
-                    parseBranches(currentInstruction);
+                if (get_bits(op0, 2, 2) == 1 && get_bits(op0, 0, 0) == 0) {
+                    error = singleDTI(currentInstruction);
                 } else {
-                    return false;
+                    error = execute_branches(currentInstruction);
                 }
         }
+        if (!error) {
+            printf("Error Detected");
+        }
     }
+}
+// -------------------------------------------------- TERMINATION ------------------------------------------------------
+void terminate(void) {
+    // Create file
+    FILE *out = fopen( ".out", "w" );
+
+    // print all register values
+    fputs("Registers:\n", out);
+    for (int i = 0; i < NUM_REGISTERS; i++) {
+        GeneralPurposeRegister currRegister = *generalPurposeRegisters[i];
+
+        // Mode
+        if (currRegister.mode) {
+            fputs("X", out);
+        } else {
+            fputs("W", out);
+        }
+
+        // Name
+        char name[2];
+        sprintf(name, "%i", i);
+        if (i < 10) {
+            fputs("0", out);
+        }
+        fputs(name, out);
+
+        fputs(" = ", out);
+
+        char str[16];
+        sprintf(str, "%lx", read_64(generalPurposeRegisters[i]));
+        fputs(str, out); putc( '\n', out);
+    }
+    fputs("PC = ", out);
+    char pc[16];
+    sprintf(pc, "%lx", programCounter);
+    fputs(pc, out); putc( '\n', out);
+
+    // print out PSTATE
+    fputs("PSTATE: ", out);
+    if (pStateRegister.negativeConditionFlag) {
+        fputs("N", out);
+    } else {
+        fputs("-", out);
+    }
+    if (pStateRegister.zeroConditionFlag) {
+        fputs("Z", out);
+    } else {
+        fputs("-", out);
+    }
+    if (pStateRegister.carryConditionFlag) {
+        fputs("C", out);
+    } else {
+        fputs("-", out);
+    }
+    if (pStateRegister.overflowConditionFlag) {
+        fputs("V", out);
+    } else {
+        fputs("-", out);
+    }
+    fputs("\n", out);
+
+    // print out all the rest of the memory
+    fputs("Non-zero memory:\n", out);
+    for (int i = 0; i < MAX_FILE_SIZE; i++) {
+        if (memory[i] != 0) {
+            char name[8];
+            sprintf(name, "0x%x: ", i);
+            fputs(name, out);
+            char str[64];
+            sprintf(str, "0x%x", memory[i]);
+            fputs(str, out); putc( '\n', out);
+        }
+    }
+
+    fclose(out);
 }
 
 int main(int argc, char **argv) {
@@ -150,10 +207,7 @@ int main(int argc, char **argv) {
     // readFile(argv[0]); CHANGEEEEE
     readFile("src/DataFile/start.elf");
     initializeRegisters();
-    bool success = emulate();
-    if (success) {
-        return EXIT_SUCCESS;
-    } else {
-        return EXIT_FAILURE;
-    }
+    //emulate();
+    terminate();
+    return EXIT_SUCCESS;
 }

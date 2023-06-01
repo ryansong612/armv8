@@ -45,6 +45,4 @@ bool write_32(GeneralPurposeRegister *gpr, int32_t num) {
     }
     (*gpr).val = (int64_t) num;
     return true;
-};
-
-
+}
