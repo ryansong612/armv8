@@ -15,13 +15,13 @@ bool execute_branch_unconditional(uint32_t instruction) {
     // Apply offset of simm26 * 4 (sign-extended to 64-bit) to the program counter
     int64_t offset = extendSignBit(get_bits(instruction, 0, 26) << 2, 26);
     programCounter += offset;
-    return 0 < programCounter < (1LL << 20);
+    return true;
 }
 
 bool execute_branch_register(uint32_t instruction) {
     // Sets the program counter to the specified address
     programCounter = read_64(generalPurposeRegisters[get_bits(instruction, 5, 9)]);
-    return 0 < programCounter < (1LL << 20);
+    return true;
 }
 
 bool execute_branch_conditional(uint32_t instruction) {
@@ -53,12 +53,14 @@ bool execute_branch_conditional(uint32_t instruction) {
         case 14:
             toExecute = true;
             break;
+        default:
+            return false;
     }
     if (toExecute) {
         int64_t offset = extendSignBit(get_bits(instruction, 0, 19) << 2, 26);
         programCounter += offset;
     }
-    return 0 < programCounter < (1LL << 20);
+    return true;
 }
 
 bool execute_branches(uint32_t instruction) {
