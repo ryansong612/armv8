@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #ifndef ARMV8_32_CUSTOMBIT_H
 #define ARMV8_32_CUSTOMBIT_H
 

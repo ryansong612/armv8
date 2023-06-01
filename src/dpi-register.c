@@ -24,7 +24,7 @@ extern PSTATE pStateRegister;
 
 // -------------- logical shift left --------------------
 
-int64_t lsl_64(int64_t val, int shift) {
+int64_t lsl_64(int64_t val, uint32_t shift) {
     int64_t sign_bit = get_bit_register64(val, 63);
     if (sign_bit == 1) {
         uint64_t unsigned_val = *(uint64_t*) & val;
@@ -37,7 +37,7 @@ int64_t lsl_64(int64_t val, int shift) {
     // carry happened
 }
 
-int64_t lsl_32(int32_t val, int shift) {
+int32_t lsl_32(int32_t val, uint32_t shift) {
     int32_t sign_bit = get_bit_register32(val, 31);
     if (sign_bit == 1) {
         uint32_t unsigned_val = *(uint32_t*) & val;
@@ -52,7 +52,7 @@ int64_t lsl_32(int32_t val, int shift) {
 
 // -------------- logical shift right --------------------
 
-int64_t lsr_64(int64_t val, int shift) {
+int64_t lsr_64(int64_t val, uint32_t shift) {
     int64_t sign_bit = get_bit_register64(val, 63);
     if (sign_bit == 1) {
         uint64_t unsigned_val = *(uint64_t*) & val;
@@ -65,7 +65,7 @@ int64_t lsr_64(int64_t val, int shift) {
     // carry happened
 }
 
-int64_t lsr_32(int32_t val, int shift) {
+int32_t lsr_32(int32_t val, uint32_t shift) {
     int32_t sign_bit = get_bit_register32(val, 31);
     if (sign_bit == 1) {
         uint32_t unsigned_val = *(uint32_t*) & val;
@@ -80,7 +80,7 @@ int64_t lsr_32(int32_t val, int shift) {
 
 // ------------- arithmetic shift right -------------------
 
-int64_t asr_64(int64_t val, int shift) {
+int64_t asr_64(int64_t val, uint32_t shift) {
     // perform right shift
     // then replace the first 5 digits to 1 if sign bit = 1
 
@@ -99,7 +99,7 @@ int64_t asr_64(int64_t val, int shift) {
     // carry happened
 }
 
-int32_t asr_32(int32_t val, int shift) {
+int32_t asr_32(int32_t val, uint32_t shift) {
     // perform right shift
     // then replace the first 5 digits to 1 if sign bit = 1
 
@@ -108,7 +108,7 @@ int32_t asr_32(int32_t val, int shift) {
 
     if (sign_bit == 1) {
         for (int i = 63; i > 58; i--) {
-            int32_t mask = 1LL << i;
+            int32_t mask = 1 << i;
             result |= mask;
         }
     }
@@ -120,7 +120,7 @@ int32_t asr_32(int32_t val, int shift) {
 
 // ------------ right rotate ------------------------
 
-int64_t ror_64(int64_t val, int shift) {
+int64_t ror_64(int64_t val, uint32_t shift) {
     // perform right shift
     // then take the carried bits and replace the first shifted bits to those
 
@@ -139,7 +139,7 @@ int64_t ror_64(int64_t val, int shift) {
     return result;
 }
 
-int32_t ror_32(int32_t val, int shift) {
+int32_t ror_32(int32_t val, uint32_t shift) {
     // perform right shift
     // then take the carried bits and replace the first shifted bits to those
 
@@ -150,7 +150,7 @@ int32_t ror_32(int32_t val, int shift) {
         // if the value is 0, just keep 0
 
         if (get_bit_register32(val, i) == 1) {
-            int32_t mask = 1LL << (31 - i);
+            int32_t mask = 1 << (31 - i);
             result |= mask;
         }
     }
@@ -171,13 +171,13 @@ GeneralPurposeRegister* find_register(uint32_t key) {
 int64_t shift_64(uint32_t instruction, int64_t rm_val, uint32_t shift) {
     // case: shift (22-23)
     switch (get_bits(instruction, 22, 23)) {
-        case 0b00:
+        case 0:
             return lsl_64(rm_val, shift);
-        case 0b01:
+        case 1:
             return lsr_64(rm_val, shift);
-        case 0b10:
+        case 2:
             return asr_64(rm_val, shift);
-        case 0b11:
+        default:
             return ror_64(rm_val, shift);
     }
 }
@@ -185,13 +185,13 @@ int64_t shift_64(uint32_t instruction, int64_t rm_val, uint32_t shift) {
 int32_t shift_32(uint32_t instruction, int32_t rm_val, uint32_t shift) {
     // case : shift (22-23)
     switch (get_bits(instruction, 22, 23)) {
-        case 0b00:
+        case 0:
             return lsl_32(rm_val, shift);
-        case 0b01:
+        case 1:
             return lsr_32(rm_val, shift);
-        case 0b10:
+        case 2:
             return asr_32(rm_val, shift);
-        case 0b11:
+        default:
             return ror_32(rm_val, shift);
     }
 }
@@ -228,8 +228,6 @@ void dpi_register_arithmetic(uint32_t instruction) {
         // case: opc (29-30)
         arithmetic_helper_32(rd, instruction, rn_val, op2);
     }
-
-    return;
 }
 
 void dpi_register_logic(uint32_t instruction) {
@@ -249,7 +247,7 @@ void dpi_register_logic(uint32_t instruction) {
         int64_t op2 = shift_64(instruction, rm_val, shift);
 
         switch (get_bits(instruction, 29, 30)) {
-            case 0b00:
+            case 0:
                 if (match_bits(instruction, 0, 21)) {
                     // bitwise AND
                     write_64(rd, rn_val & op2);
@@ -258,7 +256,7 @@ void dpi_register_logic(uint32_t instruction) {
                     write_64(rd, rn_val & ~op2);
                 }
                 break;
-            case 0b01:
+            case 1:
                 if (match_bits(instruction, 0, 21)) {
                     // bitwise incl. OR
                     write_64(rd, rn_val | op2);
@@ -267,7 +265,7 @@ void dpi_register_logic(uint32_t instruction) {
                     write_64(rd, rn_val | ~op2);
                 }
                 break;
-            case 0b10:
+            case 2:
                 if (match_bits(instruction, 0, 21)) {
                     // bitwise excl. OR NOT
                     write_64(rd, rn_val ^ ~op2);
@@ -276,7 +274,7 @@ void dpi_register_logic(uint32_t instruction) {
                     write_64(rd, rn_val ^ op2);
                 }
                 break;
-            case 0b11:
+            case 3:
                 if (match_bits(instruction, 0, 21)) {
                     // bitwise AND + setting flags
                     write_64(rd, rn_val & op2);
@@ -309,14 +307,14 @@ void dpi_register_logic(uint32_t instruction) {
 
     // 32 bit register
     if (match_bits(instruction, 0, 31)) {
-        int64_t rm_val = read_32(rm);
-        int64_t rn_val = read_32(rn);
+        int32_t rm_val = read_32(rm);
+        int32_t rn_val = read_32(rn);
 
         // perform shifts
-        int64_t op2 = shift_32(instruction, rm_val, shift);
+        int32_t op2 = shift_32(instruction, rm_val, shift);
 
         switch (get_bits(instruction, 29, 30)) {
-            case 0b00:
+            case 0:
                 if (match_bits(instruction, 0, 21)) {
                     // bitwise AND
                     write_32(rd, rn_val & op2);
@@ -325,7 +323,7 @@ void dpi_register_logic(uint32_t instruction) {
                     write_32(rd, rn_val & ~op2);
                 }
                 break;
-            case 0b01:
+            case 1:
                 if (match_bits(instruction, 0, 21)) {
                     // bitwise incl. OR
                     write_32(rd, rn_val | op2);
@@ -334,7 +332,7 @@ void dpi_register_logic(uint32_t instruction) {
                     write_32(rd, rn_val | ~op2);
                 }
                 break;
-            case 0b10:
+            case 2:
                 if (match_bits(instruction, 0, 21)) {
                     // bitwise excl. OR NOT
                     write_32(rd, rn_val ^ ~op2);
@@ -343,7 +341,7 @@ void dpi_register_logic(uint32_t instruction) {
                     write_32(rd, rn_val ^ op2);
                 }
                 break;
-            case 0b11:
+            case 3:
                 if (match_bits(instruction, 0, 21)) {
                     // bitwise AND + setting flags
                     write_32(rd, rn_val & op2);
@@ -354,7 +352,7 @@ void dpi_register_logic(uint32_t instruction) {
 
                 // updating pState flag
                 // reads the result after operation
-                int64_t res = read_32(rd);
+                int32_t res = read_32(rd);
 
                 // updates negative cond. flag
                 pStateRegister.negativeConditionFlag = get_bit_register32(res, 31);
@@ -373,8 +371,6 @@ void dpi_register_logic(uint32_t instruction) {
                 break;
         }
     }
-
-    return;
 }
 
 void dpi_register_multiply(uint32_t instruction) {
@@ -407,9 +403,9 @@ void dpi_register_multiply(uint32_t instruction) {
 
     // 32 bit register
     if (match_bits(instruction, 0, 31)) {
-        int64_t rn_val = read_32(rn);
-        int64_t ra_val = read_32(ra);
-        int64_t rm_val = read_32(rm);
+        int32_t rn_val = read_32(rn);
+        int32_t ra_val = read_32(ra);
+        int32_t rm_val = read_32(rm);
 
         // 11111 encodes 0
         if (ra_val == ZERO_REGISTER_BIT) {
