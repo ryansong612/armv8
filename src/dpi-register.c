@@ -159,15 +159,6 @@ int32_t ror_32(int32_t val, uint32_t shift) {
 }
 
 // ------------------------------------- CUSTOM HELPER FUNCTIONS ---------------------------------------------------
-GeneralPurposeRegister* find_register(uint32_t key) {
-    for (int i = 0; i < NUM_REGISTERS; i ++) {
-        if (generalPurposeRegisters[i].id == key) {
-            return &generalPurposeRegisters[i];
-        }
-    }
-    return NULL;
-}
-
 int64_t shift_64(uint32_t instruction, int64_t rm_val, uint32_t shift) {
     // case: shift (22-23)
     switch (get_bits(instruction, 22, 23)) {
