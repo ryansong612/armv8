@@ -55,7 +55,7 @@ void readFile(char *dst) {
     fread(memory, 1, fileSize, ptr);
 
     // Chunking them into instructions (4 bytes)
-    size_t numInstructions = fileSize / sizeof(uint32_t);
+    // size_t numInstructions = fileSize / sizeof(uint32_t);
     instructions = (uint32_t *)memory;
 
     /*
@@ -155,12 +155,12 @@ void terminate(void) {
         fputs(" = ", out);
 
         char str[16];
-        sprintf(str, "%x", read_64(generalPurposeRegisters[i]));
+        sprintf(str, "%lx", read_64(generalPurposeRegisters[i]));
         fputs(str, out); putc( '\n', out);
     }
     fputs("PC = ", out);
     char pc[16];
-    sprintf(pc, "%x", programCounter);
+    sprintf(pc, "%lx", programCounter);
     fputs(pc, out); putc( '\n', out);
 
     // print out PSTATE
