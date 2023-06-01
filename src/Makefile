@@ -4,17 +4,16 @@ CFLAGS  ?= -std=c17 -g\
 	-Wall -Werror -pedantic
 
 .SUFFIXES: .c .o
-
 .PHONY: all clean
 
-all: parse.c
+all: assemble emulate
 
-#assemble: assemble.o
-#emulate: emulate.o
-parse: parse.o
+assemble: assemble.o
+
+emulate: emulate.o
 
 clean:
-	$(RM) *.o parse #assemble emulate
+	$(RM) *.o assemble emulate
 	
 emulate:       emulate.o custombit.o dpi-immediate.o dpi-register.o parseLS.o parseBranches.o readnwrite.o
 
