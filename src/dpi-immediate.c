@@ -199,16 +199,24 @@ void dpi_wide_move(uint32_t instruction) {
     GeneralPurposeRegister *rd = find_register(get_bits(instruction, 0, 4));
 
     uint32_t hw = get_bits(instruction, 21, 22);
-    uint32_t imm16 = get_bits(instruction, 5, 20);
+    int32_t imm16 = (int32_t) get_bits(instruction, 5, 20);
     uint32_t opc = get_bits(instruction, 29, 30);
     uint32_t sf = (instruction >> 31) & 1;
-    int64_t op = imm16 << (hw * 16);
+
+    // introducing op_64 and op_32; possible check needed
+    int64_t op_64 = imm16 << (hw * 16);
+    int32_t op_32 = imm16 << (hw * 16);
 
     int shift = (int) hw * 16;
     int end_shift = (int) hw * 16 + 15;
+
+    // introducing 64 and 32 variants; possible check needed;
     int64_t left_part_64 = get_bits64((*rd).val, end_shift, 63) << end_shift;
-    uint64_t middle_part = op << shift;
-    uint64_t right_part = (uint64_t) get_bits64((*rd).val, 0, shift);
+    int64_t middle_part_64 = op_64 << shift;
+    int64_t right_part_64 = get_bits64((*rd).val, 0, shift);
+    int32_t middle_part_32 = op_32 << shift;
+    int32_t right_part_32 = (int32_t) get_bits64((*rd).val, 0, shift);
+
 
 
 
@@ -216,13 +224,13 @@ void dpi_wide_move(uint32_t instruction) {
         // bit-width access is 64-bit
         switch (opc) {
             case MOVZ :
-                write_64(rd, op);
+                write_64(rd, op_64);
                 break;
             case MOVN:
-                write_64(rd, ~op); // not sure whether this is correct, check spec
+                write_64(rd, ~op_64); // not sure whether this is correct, check spec
                 break;
             case MOVK:
-                write_64(rd, left_part_64 + middle_part + right_part); // not sure about the type conversion
+                write_64(rd, left_part_64 + middle_part_64 + right_part_64); // not sure about the type conversion
                 break;
             default:
                 break;
@@ -234,13 +242,13 @@ void dpi_wide_move(uint32_t instruction) {
         // bit-width access is 32-bit
         switch (opc) {
             case MOVZ:
-                write_32(rd, op);
+                write_32(rd, op_32);
                 break;
             case MOVN:
-                write_32(rd, ~op);
+                write_32(rd, ~op_32);
                 break;
             case MOVK:
-                write_32(rd, middle_part + right_part);
+                write_32(rd, middle_part_32 + right_part_32);
                 break;
             default:
                 break;
