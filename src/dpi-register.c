@@ -45,7 +45,6 @@ extern p_state p_state_register;
 
 // ------------------------------------- SHIFTS ---------------------------------------------------
 // value manipulations (lsl, lsr, asr, ror)
-// for lsl and lsr, if negative, then take the positive value before shift
 
 // -------------- logical shift left --------------------
 
