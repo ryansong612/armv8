@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <assert.h>
 #include "emulate.h"
 #include "custombit.h"
 #include "readnwrite.h"
@@ -16,7 +17,6 @@ extern p_state p_state_register;
 // Takes numBytesToAccess number of bytes from memory starting from the address
 // and loads this 4-byte (32 bits) or 8-byte number (64 bits) on to the register.
 void load_to_register(int num_byte_to_access, uint8_t *memory, int64_t address, general_purpose_register *target_register) {
-    printf("loading\n");
     uint64_t total = 0;
     for (int i = 0; i < num_byte_to_access; i++) {
         total += ((uint64_t) memory[address + i]) << (i * 8);
@@ -33,7 +33,6 @@ void load_to_register(int num_byte_to_access, uint8_t *memory, int64_t address, 
 // stores this 4-byte (32 bits) or 8-byte number (64 bits) to the memory
 // starting from the address.
 void store_to_memory(int num_byte_to_access, uint8_t *memory, int64_t address, general_purpose_register *target_register) {
-    printf("storing\n");
     // what's the difference between read_64 and read_32?
     if (num_byte_to_access == BYTES_IN_X_MODE_REGISTER) {
         for (int i = 0; i < num_byte_to_access; i++) {
@@ -46,16 +45,16 @@ void store_to_memory(int num_byte_to_access, uint8_t *memory, int64_t address, g
     }
 }
 
-// Calculate address by adding the PC and the offset (simm19 ∗ 4)
-bool load_literal(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int num_byte_to_access) {
-    printf("load literal");
+// Calculate address by adding the PC and the offset (simm19 ∗ 4). Then saves num_byte_to_access number of bytes
+// starting from address into the target register.
+void load_literal(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int num_byte_to_access) {
     // gets address PC + simms19 * 4
     uint32_t simms19 = get_bits(instruction, 5, 23) * 4;
     int64_t offset = extend_sign_bit(simms19, 19); // sign extend it
     uint64_t address = program_counter + offset;
 
-    int64_t total = 0;
     // Access memory to get value
+    int64_t total = 0;
     for (int i = 0; i < num_byte_to_access; i++) {
         total += ((uint64_t) memory[address + i]) << (i * 8);
     }
@@ -66,29 +65,28 @@ bool load_literal(uint8_t *memory, uint32_t instruction, general_purpose_registe
     } else {
         write_32(target_register, total);
     }
-
-    return true;
 }
 
-bool unsigned_immediate_offset(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int8_t xn, int num_byte_to_access, bool load) {
-    printf("Unsigned Immediate offset is running\n");
+// Calculate address by adding the value stored in xn and the unsigned offset imm12. Then saves num_byte_to_access number of bytes
+// starting from address into the target register.
+void unsigned_immediate_offset(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int8_t xn, int num_byte_to_access, bool load) {
     uint64_t imm12 = get_bits(instruction, 10, 21) * 8;
     printf("%lu\n", imm12);
 
     // Check validity of arguments
     if (target_register->mode) {
-        if (imm12 > 32760) {
-            return false;
-        }
+        // if (imm12 > 32760) {
+        //     return false;
+        // }
+        assert(imm12 <= 32760);
     } else {
-        if (imm12 > 16380) {
-            return false;
-        }
+        // if (imm12 > 16380) {
+        //     return false;
+        // }
+        assert(imm12 <= 16380);
     }
-    printf("%i", xn);      
-    int64_t address = read_64(find_register(xn)) + imm12;
 
-    printf("%ld\n", address);
+    int64_t address = read_64(find_register(xn)) + imm12;
 
     // Access this address in memory and write this to target register
     if (load) {
@@ -96,18 +94,18 @@ bool unsigned_immediate_offset(uint8_t *memory, uint32_t instruction, general_pu
     } else {
         store_to_memory(num_byte_to_access, memory, address, target_register);
     }
-    return true;
 }
 
-bool pre_or_post_indexed(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int8_t xn, int num_byte_to_access, bool load, bool pre) {
-    printf("pre-index\n");
-
+// If it is pre-indexed, calculate address by adding the value stored in xn and the signed offset simm9.
+// If it is post-indexed, address is given by the value stored in xn.
+// Then, it saves num_byte_to_access number of bytes starting from address to target_register.
+void pre_or_post_indexed(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int8_t xn, int num_byte_to_access, bool load, bool pre) {
     // Calculates value of address
     int32_t simm9 = extend_sign_bit(get_bits(instruction, 12, 20), 9);
-    printf("%d\n", simm9);
     int64_t value = read_64(find_register(xn));
     int64_t address = value + simm9;
 
+    // Set memory_address depending on pre/post-indexed
     int64_t memory_address = 0;
     if (pre) {
         memory_address = address;
@@ -128,20 +126,20 @@ bool pre_or_post_indexed(uint8_t *memory, uint32_t instruction, general_purpose_
     } else {
         store_to_memory(num_byte_to_access, memory, memory_address, target_register);
     }
-
-    return true;
 }
 
-// Calculate the address by
-bool registerOffset(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int8_t xn, int num_byte_to_access, bool load) {
-    printf("register offset\n");
+// Calculate the address by adding value stored in xn and value stored in xm
+// Then, it saves num_byte_to_access number of bytes starting from address to target_register.
+void registerOffset(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int8_t xn, int num_byte_to_access, bool load) {
     // Add the two values of registers
     int8_t xm = get_bits(instruction, 16, 20);
 
-    if (!find_register(xm)->mode) {
-        printf("target register has wrong mode!");
-        return false;
-    }
+    // Check register has the right mode
+    // if (!find_register(xm)->mode) {
+    //     printf("target register has wrong mode!");
+    //     return false;
+    // }
+    assert(find_register(xm)->mode);
 
     int64_t address = find_register(xm)->val + find_register(xn)->val;
 
@@ -151,11 +149,11 @@ bool registerOffset(uint8_t *memory, uint32_t instruction, general_purpose_regis
     } else {
         store_to_memory(num_byte_to_access, memory, address, target_register);
     }
-
-    return true;
 }
 
-bool execute_DTI(uint8_t *memory, uint32_t instruction) {
+// Entry point from emulate. Parses the instructions and invokes the functions above
+// depending on the instruction.
+void execute_DTI(uint8_t *memory, uint32_t instruction) {
     // get target register
     uint32_t target = get_bits(instruction,0, 4);
     general_purpose_register *target_register = general_purpose_register_list[target];
@@ -174,30 +172,26 @@ bool execute_DTI(uint8_t *memory, uint32_t instruction) {
         num_byte_to_access = 4;
     }
 
-    bool success;
-
     // Determine type of data transfer
     // It is a load literal
     if (get_bits(instruction, 31, 31) == 0) {
-        success = load_literal(memory, instruction, target_register, num_byte_to_access);
+        load_literal(memory, instruction, target_register, num_byte_to_access);
     }
     // It is a single data transfer
     else {
         int8_t xn = get_bits(instruction, 5, 9);
         if (get_bits(instruction, 24, 24) != 0) { // U = 1
-            success = unsigned_immediate_offset(memory, instruction, target_register, xn, num_byte_to_access, load);
+            unsigned_immediate_offset(memory, instruction, target_register, xn, num_byte_to_access, load);
         } else if (get_bits(instruction, 21, 21) != 0) { // L = 1
-            success = registerOffset(memory, instruction, target_register, xn, num_byte_to_access, load);
+            registerOffset(memory, instruction, target_register, xn, num_byte_to_access, load);
         } else {
             if (get_bits(instruction, 11, 11) == 1) {
-                success = pre_or_post_indexed(memory, instruction, target_register, xn, num_byte_to_access, load, true);
+                pre_or_post_indexed(memory, instruction, target_register, xn, num_byte_to_access, load, true);
             } else {
-                success = pre_or_post_indexed(memory, instruction, target_register, xn, num_byte_to_access, load, false);
+                pre_or_post_indexed(memory, instruction, target_register, xn, num_byte_to_access, load, false);
             }
         }
     }
     // Modify PC
     program_counter += 4;
-
-    return success;
 }
