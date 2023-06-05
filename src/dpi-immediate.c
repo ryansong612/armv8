@@ -1,193 +1,174 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "custombit.h"
+#include "dpi-immediate.h"
 #include "emulate.h"
 #include "readnwrite.h"
-#include "dpi-immediate.h"
 
-#define WIDE_MOVE_FLAG_BITS 5
-#define ARITHMETIC_FLAG_BITS 2
+// Operation Constants (Flags)
+#define ADD 0
+#define ADDS 1
+#define SUB 2
+#define SUBS 3
+#define MOVZ 2
+#define MOVN 0
+#define MOVK 3
+
+// Indices
 #define OPI_START_BIT 23
+#define ZERO_REGISTER_ID 31
+#define SHIFT_BIT 22
+#define ACCESS_MODE_BIT 31
+#define RD_START 0
+#define RD_END 4
+#define RN_START 5
+#define RN_END 9
+#define IMM12_START 10
+#define IMM12_END 21
+#define HW_START 21
+#define HW_END 22
+#define IMM16_START 5
+#define IMM16_END 20
+#define OPC_START 29
+#define OPC_END 30
+
+// Util Constants
+#define ZERO_EXTEND_MASK 0xFFFFFFFFLL
 
 // retrieving global variables from emulator
-extern GeneralPurposeRegister generalPurposeRegisters[NUM_REGISTERS];
-extern GeneralPurposeRegister zeroRegister;
-extern uint64_t programCounter;
-extern PSTATE pStateRegister;
+extern general_purpose_register * general_purpose_register_list[NUM_REGISTERS];
+extern general_purpose_register zero_register;
+extern uint64_t program_counter;
+extern p_state p_state_register;
 
 // ------------------------------------- CUSTOM HELPER FUNCTIONS -------------------------------------------------------
-GeneralPurposeRegister* find_register(uint32_t key) {
+general_purpose_register* find_register(uint32_t key) {
     if (key == ZERO_REGISTER_ID) {
-        return &zeroRegister;
+        return &zero_register;
     }
 
-    for (int i = 0; i < NUM_REGISTERS; i ++) {
-        if (generalPurposeRegisters[i].id == key) {
-            return &generalPurposeRegisters[i];
+    for (int i = 0; i < NUM_REGISTERS; i++) {
+        if (general_purpose_register_list[i]->id == key) {
+            return general_purpose_register_list[i];
         }
     }
+
     return NULL;
 }
 
-void arithmetic_helper_64(GeneralPurposeRegister *rd, uint32_t instruction, int64_t rn_val, int32_t op2) {
+void arithmetic_helper_64(general_purpose_register *rd, uint32_t instruction, int64_t rn_val, int64_t op2) {
     // case: opc (29-30)
-    switch (get_bits(instruction, 29, 30)) {
+    switch (get_bits(instruction, OPC_START, OPC_END)) {
         case ADD:
             write_64(rd, rn_val + op2);
             break;
-        case ADDS:
-            write_64(rd, rn_val + op2);
+        case ADDS: {
+            int64_t res = rn_val + op2;
+            write_64(rd, res);
 
-            // reads the result after operation
-            int64_t res = read_64(rd);
             // updates pState flag
-            pStateRegister.negativeConditionFlag = get_bit_register64(res, 63);
+            p_state_register.negative_condition_flag = get_bit_register64(res, 63);
 
             // updates pState zero condition flag
-            if (res == 0) {
-                pStateRegister.zeroConditionFlag = 1;
-            } else {
-                pStateRegister.zeroConditionFlag = 0;
-            }
+            p_state_register.zero_condition_flag = res == 0;
 
             // updates pState carry condition flag
-            if (res < rn_val || res < op2) {
-                pStateRegister.carryConditionFlag = 1;
-            } else {
-                pStateRegister.carryConditionFlag = 0;
-            }
+            p_state_register.carry_condition_flag = (uint64_t) res < (uint64_t) rn_val
+                                                && (uint64_t) res < (uint64_t) op2;
 
             // updates pState sign overflow condition flag
-            int64_t sign_rn_val = get_bit_register64(rn_val, 63);
-            int64_t sign_op2 = get_bit_register64(op2, 63);
-            int64_t sign_res = get_bit_register64(res, 63);
-            pStateRegister.overflowConditionFlag = (sign_rn_val != sign_op2)
-                                                   && (sign_res != sign_rn_val);
+            p_state_register.overflow_condition_flag = ((op2 > 0) && rn_val > (INT64_MAX - op2))
+                                                   || ((op2 < 0) && rn_val < (INT64_MIN - op2));
             break;
+        }
         case SUB:
             write_64(rd, rn_val - op2);
             break;
-        case SUBS:
-            write_64(rd, rn_val - op2);
-            // reads the result after operation
-            res = read_64(rd);
+        case SUBS: {
+            int64_t res = rn_val - op2;
+            write_64(rd, res);
+
             // updates pState flag
-            pStateRegister.negativeConditionFlag = get_bit_register64(res, 63);
+            p_state_register.negative_condition_flag = get_bit_register64(res, 63);
 
             // updates pState zero condition flag
-            if (res == 0) {
-                pStateRegister.zeroConditionFlag = 1;
-            } else {
-                pStateRegister.zeroConditionFlag = 0;
-            }
+            p_state_register.zero_condition_flag = res == 0;
 
             // updates pState carry condition flag
-            if (res < rn_val || res < op2) {
-                pStateRegister.carryConditionFlag = 1;
-            } else {
-                pStateRegister.carryConditionFlag = 0;
-            }
+            p_state_register.carry_condition_flag = (uint64_t) rn_val >= (uint64_t) op2;
 
             // updates pState sign overflow condition flag
-            sign_rn_val = get_bit_register64(rn_val, 63);
-            sign_op2 = 1;
-            sign_res = get_bit_register64(res, 63);
-            pStateRegister.overflowConditionFlag = (sign_rn_val != sign_op2)
-                                                   && (sign_res != sign_rn_val);
+            p_state_register.overflow_condition_flag = ((op2 > 0) && rn_val < (INT64_MIN + op2))
+                                                  || ((op2 < 0) && rn_val > (INT64_MAX + op2));
             break;
+        }
     }
 }
 
-void arithmetic_helper_32(GeneralPurposeRegister *rd, uint32_t instruction, int32_t rn_val, int32_t op2) {
+void arithmetic_helper_32(general_purpose_register *rd, uint32_t instruction, int32_t rn_val, int32_t op2) {
     // case: opc (29-30)
-    switch (get_bits(instruction, 29, 30)) {
+    switch (get_bits(instruction, OPC_START, OPC_END)) {
         case ADD:
             write_32(rd, rn_val + op2);
             break;
-        case ADDS:
-            write_32(rd, rn_val + op2);
-
-            // reads the result after operation
-            int32_t res = read_32(rd);
+        case ADDS: {
+            int32_t res = rn_val + op2;
+            write_32(rd, res);
             // updates pState flag
-            pStateRegister.negativeConditionFlag = get_bit_register32(res, 31);
-
+            p_state_register.negative_condition_flag = get_bit_register32(res, 31);
             // updates pState zero condition flag
-            if (res == 0) {
-                pStateRegister.zeroConditionFlag = 1;
-            } else {
-                pStateRegister.zeroConditionFlag = 0;
-            }
-
+            p_state_register.zero_condition_flag = res == 0;
             // updates pState carry condition flag
-            if (res < rn_val || res < op2) {
-                pStateRegister.carryConditionFlag = 1;
-            } else {
-                pStateRegister.carryConditionFlag = 0;
-            }
+            p_state_register.carry_condition_flag = (uint32_t) res < (uint32_t) rn_val && (uint32_t) res < (uint32_t) op2;
 
             // updates pState sign overflow condition flag
-            int64_t sign_rn_val = get_bit_register32(rn_val, 31);
-            int64_t sign_op2 = get_bit_register32(op2, 31);
-            int64_t sign_res = get_bit_register32(res, 31);
-            pStateRegister.overflowConditionFlag = (sign_rn_val != sign_op2)
-                                                   && (sign_res != sign_rn_val);
+            p_state_register.overflow_condition_flag = ((op2 > 0) && rn_val > (INT64_MAX - op2))
+                                                  || ((op2 < 0) && rn_val < (INT64_MIN - op2));
             break;
+        }
         case SUB:
             write_32(rd, rn_val - op2);
             break;
-        case SUBS:
-            write_32(rd, rn_val - op2);
-            // reads the result after operation
-            res = read_32(rd);
+        case SUBS: {
+            int32_t res = rn_val - op2;
+            write_32(rd, res);
+
             // updates pState flag
-            pStateRegister.negativeConditionFlag = get_bit_register32(res, 31);
+            p_state_register.negative_condition_flag = get_bit_register32(res, 31);
 
             // updates pState zero condition flag
-            if (res == 0) {
-                pStateRegister.zeroConditionFlag = 1;
-            } else {
-                pStateRegister.zeroConditionFlag = 0;
-            }
+            p_state_register.zero_condition_flag = res == 0;
 
             // updates pState carry condition flag
-            if (res < rn_val || res < op2) {
-                pStateRegister.carryConditionFlag = 1;
-            } else {
-                pStateRegister.carryConditionFlag = 0;
-            }
+            p_state_register.carry_condition_flag = (uint32_t) rn_val >= (uint32_t) op2;
 
             // updates pState sign overflow condition flag
-            sign_rn_val = get_bit_register32(rn_val, 31);
-            sign_op2 = 1;
-            sign_res = get_bit_register32(res, 31);
-            pStateRegister.overflowConditionFlag = (sign_rn_val != sign_op2)
-                                                   && (sign_res != sign_rn_val);
+            p_state_register.overflow_condition_flag = ((op2 > 0) && rn_val < (INT32_MIN + op2))
+                                                  || ((op2 < 0) && rn_val > INT32_MAX + op2);
             break;
+        }
     }
 }
 
 // ------------------------------------- Executing Operations ----------------------------------------------------------
 void dpi_arithmetic(uint32_t instruction) {
-    GeneralPurposeRegister *rd = find_register(get_bits(instruction, 0, 4));
-    GeneralPurposeRegister *rn = find_register(get_bits(instruction, 5, 9));
-    uint32_t imm12_unsigned = get_bits(instruction, 10, 21);
+    general_purpose_register *rd = find_register(get_bits(instruction, RD_START, RD_END));
+    general_purpose_register *rn = find_register(get_bits(instruction, RN_START, RN_END));
+    uint32_t imm12 = get_bits(instruction, IMM12_START, IMM12_END);
     // Check for sh (sign for shift)
-    if (match_bits(instruction, 1, 22)) {
+    if (get_bits(instruction, SHIFT_BIT, SHIFT_BIT) == 1) {
         // shift by 12-bits is needed
-        imm12_unsigned <<= 12;
+        imm12 <<= 12;
     }
 
-    int32_t imm12 = (int32_t) imm12_unsigned;
-
-    if (match_bits(instruction, 1, 31)) {
+    if (get_bits(instruction, ACCESS_MODE_BIT, ACCESS_MODE_BIT) == 1) {
         // access bit-width is 64-bit
         int64_t rn_val = read_64(rn);
-        arithmetic_helper_64(rd, instruction, rn_val, imm12);
+        arithmetic_helper_64(rd, instruction, rn_val, imm12 & ZERO_EXTEND_MASK);
         return;
     }
 
-    if (match_bits(instruction, 0, 31)) {
+    if (get_bits(instruction, ACCESS_MODE_BIT, ACCESS_MODE_BIT) == 0) {
         // access bit-width is 32-bit
         int32_t rn_val = read_32(rn);
         arithmetic_helper_32(rd, instruction, rn_val, imm12);
@@ -196,41 +177,30 @@ void dpi_arithmetic(uint32_t instruction) {
 
 void dpi_wide_move(uint32_t instruction) {
 
-    GeneralPurposeRegister *rd = find_register(get_bits(instruction, 0, 4));
+    general_purpose_register *rd = find_register(get_bits(instruction, 0, 4));
 
-    uint32_t hw = get_bits(instruction, 21, 22);
-    int32_t imm16 = (int32_t) get_bits(instruction, 5, 20);
-    uint32_t opc = get_bits(instruction, 29, 30);
+    uint32_t hw = get_bits(instruction, HW_START, HW_END);
+    uint32_t imm16 = get_bits(instruction, IMM16_START, IMM16_END);
+    uint32_t opc = get_bits(instruction, OPC_START, OPC_END);
     uint32_t sf = (instruction >> 31) & 1;
+    int64_t op = (imm16 & ZERO_EXTEND_MASK) << (hw * 16);
 
-    // introducing op_64 and op_32; possible check needed
-    int64_t op_64 = imm16 << (hw * 16);
-    int32_t op_32 = imm16 << (hw * 16);
+    uint64_t shift = hw * 16;
 
-    int shift = (int) hw * 16;
-    int end_shift = (int) hw * 16 + 15;
-
-    // introducing 64 and 32 variants; possible check needed;
-    int64_t left_part_64 = get_bits64((*rd).val, end_shift, 63) << end_shift;
-    int64_t middle_part_64 = op_64 << shift;
-    int64_t right_part_64 = get_bits64((*rd).val, 0, shift);
-    int32_t middle_part_32 = op_32 << shift;
-    int32_t right_part_32 = (int32_t) get_bits64((*rd).val, 0, shift);
-
-
-
+    uint64_t mask = ~(0xFFFFULL << shift);
+    uint64_t masked = ((rd -> val) & mask) | (op & (~mask));
 
     if (sf == 1) {
         // bit-width access is 64-bit
         switch (opc) {
-            case MOVZ :
-                write_64(rd, op_64);
+            case MOVZ:
+                write_64(rd, op);
                 break;
             case MOVN:
-                write_64(rd, ~op_64); // not sure whether this is correct, check spec
+                write_64(rd, ~op);
                 break;
             case MOVK:
-                write_64(rd, left_part_64 + middle_part_64 + right_part_64); // not sure about the type conversion
+                write_64(rd, masked);
                 break;
             default:
                 break;
@@ -248,31 +218,33 @@ void dpi_wide_move(uint32_t instruction) {
                 write_32(rd, ~op_32);
                 break;
             case MOVK:
-                write_32(rd, middle_part_32 + right_part_32);
+                write_32(rd, masked);
                 break;
             default:
                 break;
         }
-        return;
     }
 }
 
 // Assuming all registers have their bit arrays reversed
-bool execute_DPIImmediate(uint32_t instruction) {
+void execute_DPIImmediate(uint32_t instruction) {
     // determining operation
-
     // CASE 1: when opi is 010 -> arithmetic
-    if (match_bits(instruction, ARITHMETIC_FLAG_BITS, OPI_START_BIT)) {
+    if (get_bits(instruction, OPI_START_BIT, OPI_START_BIT) == 0
+    &&  get_bits(instruction, OPI_START_BIT + 1, OPI_START_BIT + 1) == 1
+    &&  get_bits(instruction, OPI_START_BIT + 2, OPI_START_BIT + 2) == 0) {
         dpi_arithmetic(instruction);
     }
     // CASE 2: when opi is 101 -> wide move
-    else if (match_bits(instruction, WIDE_MOVE_FLAG_BITS, OPI_START_BIT)) {
+    else if (get_bits(instruction, OPI_START_BIT, OPI_START_BIT) == 1
+        &&  get_bits(instruction, OPI_START_BIT + 1, OPI_START_BIT + 1) == 0
+        &&  get_bits(instruction, OPI_START_BIT + 2, OPI_START_BIT + 2) == 1) {
         dpi_wide_move(instruction);
     }
 
     // DO NOTHING for other values of opi
 
-    // Increment Program Counter by 1
-    programCounter++;
-    return true;
+    // Increment Program Counter by 4
+    program_counter += 4;
+    return;
 }

@@ -12,51 +12,27 @@
 #include "readnwrite.h"
 
 
-#define MAX_FILE_SIZE 1048576 // 2^20 bytes
+#define MAX_FILE_SIZE 2097152 // 2MB
 #define NOP 3573751839 // No operation instruction
 #define HALT 2315255808 // Termination instruction
 #define NUM_REGISTERS 31
 
-// Global variables
-uint8_t memory[MAX_FILE_SIZE];
-uint32_t *instructions;
-
 // ------------------------------------------------- READ + PARSING FILES ----------------------------------------------
-// for debugging purposes
-void printBinary(uint32_t value) {
-    // Determine the number of bits in uint64_t
-    int numBits = sizeof(uint32_t) * 8;
-
-    // Print each bit from left to right
-    for (int i = numBits - 1; i >= 0; i--) {
-        uint32_t mask = 1U << i; // Create a bitmask for the current bit position
-
-        // Check if the bit is set (1) or unset (0)
-        if (value & mask)
-            printf("1");
-        else
-            printf("0");
-    }
-
-    printf("\n");
-}
 
 // reads binary file
-void readFile(char *dst) {
-    FILE *ptr;
-    ptr = fopen(dst, "rb");
+void read_file(char *dst, uint8_t *memory) {
+    FILE *ptr = fopen(dst, "rb");
+    if (ptr == NULL) {
+        perror("File does not exist.\n");
+        exit(139);
+    }
 
-    // Determine the file size
-    fseek(ptr, 0, SEEK_END);
-    long fileSize = ftell(ptr);
-    fseek(ptr, 0, SEEK_SET); // moves pointer back to front of file
-
-    // reads the file to memory byte by byte
-    fread(memory, 1, fileSize, ptr);
+    fread(memory, 1, MAX_FILE_SIZE, ptr);
 
     // Chunking them into instructions (4 bytes)
     // size_t numInstructions = fileSize / sizeof(uint32_t);
-    instructions = (uint32_t *)memory;
+
+    fclose(ptr);
 
     /*
     // Debugging
@@ -69,82 +45,82 @@ void readFile(char *dst) {
 
 // ---------------------------------------------- INITIALIZING REGISTERS -----------------------------------------------
 
-GeneralPurposeRegister *generalPurposeRegisters[NUM_REGISTERS];
-GeneralPurposeRegister zeroRegister = { .id = NUM_REGISTERS,
+general_purpose_register *general_purpose_register_list[NUM_REGISTERS];
+general_purpose_register zero_register = { .id = NUM_REGISTERS,
         .val = 0,
+        .mode = true,
         .zeroRegisterFlag = true,
         .programCounterFlag = false };
-uint64_t programCounter = 0;
-PSTATE pStateRegister = { .carryConditionFlag = false,
-        .negativeConditionFlag = false,
-        .overflowConditionFlag = false,
-        .zeroConditionFlag = false };
+uint64_t program_counter = 0;
+p_state p_state_register = { .negative_condition_flag = false,
+                          .zero_condition_flag = true,
+                          .carry_condition_flag = false,
+                          .overflow_condition_flag = false };
 
 void initializeRegisters(void) {
     for (int8_t i = 0; i < 31; i++) {
-        GeneralPurposeRegister newRegister = { .id = i,
+        general_purpose_register new_register = { .id = i,
                 .val = 0,
+                .mode = true,
                 .zeroRegisterFlag = false,
                 .programCounterFlag = false };
-        GeneralPurposeRegister *gpr = malloc(sizeof(GeneralPurposeRegister));
-        *gpr = newRegister;
-        generalPurposeRegisters[i] = gpr;
+        general_purpose_register *gpr = malloc(sizeof(general_purpose_register));
+        *gpr = new_register;
+        general_purpose_register_list[i] = gpr;
     }
 }
 
-bool emulate(void) {
-    bool error;
+void emulate(uint8_t *memory) {
     while (true) {
-        error = true;
-        uint32_t currentInstruction = instructions[programCounter / 4];
-        // Special Instructions
-        if (currentInstruction == HALT) {
-            return true;
+        uint32_t current_instruction = 0;
+        for (int i = 0; i < 4; i++ ) {
+            current_instruction += ((uint32_t) memory[program_counter + i]) << (i * 8);
         }
-        if (currentInstruction == NOP) {
-            programCounter += 4;
+        // Special Instructions
+        if (current_instruction == HALT || current_instruction == 0) {
+            return;
+        }
+        if (current_instruction == NOP) {
+            program_counter += 4;
             continue;
         }
         // Split into 4 cases: DPImmediate, DPRegister, Loads and Stores, Branches
-        uint32_t op0 = get_bits(currentInstruction, 25, 28);
+        uint32_t op0 = get_bits(current_instruction, 25, 28);
         switch(get_bits(op0, 1, 3)) {
             case 4:
-                error = execute_DPIImmediate(currentInstruction);
+                execute_DPIImmediate(current_instruction);
                 break;
             case 5:
-                error = execute_branches(currentInstruction);
+                execute_branches(current_instruction);
                 break;
             default:
                 if (get_bits(op0, 2, 2) == 1 && get_bits(op0, 0, 0) == 0) {
-                    error = singleDTI(currentInstruction);
+                    execute_DTI(memory, current_instruction);
                 } else {
-                    error = execute_branches(currentInstruction);
+                    execute_DPIRegister(current_instruction);
                 }
-        }
-        if (!error) {
-            printf("Error Detected");
         }
     }
 }
 // -------------------------------------------------- TERMINATION ------------------------------------------------------
-void terminate(void) {
+void terminate(uint8_t *memory, char *output_path) {
     // Create file
-    FILE *out = fopen( ".out", "w" );
+    FILE *out = fopen(output_path, "w");
 
     // print all register values
     fputs("Registers:\n", out);
     for (int i = 0; i < NUM_REGISTERS; i++) {
-        GeneralPurposeRegister currRegister = *generalPurposeRegisters[i];
+        general_purpose_register *current_register = general_purpose_register_list[i];
 
         // Mode
-        if (currRegister.mode) {
+        if (current_register->mode) {
             fputs("X", out);
         } else {
             fputs("W", out);
         }
 
         // Name
-        char name[2];
+        char name[6];
         sprintf(name, "%i", i);
         if (i < 10) {
             fputs("0", out);
@@ -153,33 +129,32 @@ void terminate(void) {
 
         fputs(" = ", out);
 
-        char str[16];
-        sprintf(str, "%lx", read_64(generalPurposeRegisters[i]));
+        char str[17];
+        sprintf(str, "%016lx", read_64(general_purpose_register_list[i]));
         fputs(str, out); putc( '\n', out);
     }
     fputs("PC = ", out);
-    char pc[16];
-    sprintf(pc, "%lx", programCounter);
+    char pc[17];
+    sprintf(pc, "%016lx", program_counter);
     fputs(pc, out); putc( '\n', out);
-
     // print out PSTATE
     fputs("PSTATE: ", out);
-    if (pStateRegister.negativeConditionFlag) {
+    if (p_state_register.negative_condition_flag) {
         fputs("N", out);
     } else {
         fputs("-", out);
     }
-    if (pStateRegister.zeroConditionFlag) {
+    if (p_state_register.zero_condition_flag) {
         fputs("Z", out);
     } else {
         fputs("-", out);
     }
-    if (pStateRegister.carryConditionFlag) {
+    if (p_state_register.carry_condition_flag) {
         fputs("C", out);
     } else {
         fputs("-", out);
     }
-    if (pStateRegister.overflowConditionFlag) {
+    if (p_state_register.overflow_condition_flag) {
         fputs("V", out);
     } else {
         fputs("-", out);
@@ -188,26 +163,45 @@ void terminate(void) {
 
     // print out all the rest of the memory
     fputs("Non-zero memory:\n", out);
-    for (int i = 0; i < MAX_FILE_SIZE; i++) {
-        if (memory[i] != 0) {
+    for (int i = 0; i < MAX_FILE_SIZE; i += 4) {
+        int32_t aligned = 0;
+        for (int j = i; j < i + 4; j++) {
+            aligned |= memory[j] << ((j - i) * 8);
+        }
+        if (aligned != 0) {
             char name[8];
             sprintf(name, "0x%x: ", i);
             fputs(name, out);
             char str[64];
-            sprintf(str, "0x%x", memory[i]);
+            sprintf(str, "0x%x", aligned);
             fputs(str, out); putc( '\n', out);
         }
     }
-
     fclose(out);
 }
 
 int main(int argc, char **argv) {
+    char *output_path = argv[2];
+    // Global variables
+    uint8_t *memory = (uint8_t *) calloc(MAX_FILE_SIZE, sizeof(uint8_t));
+    if (memory == NULL) {
+        perror("Memory not allocated.\n");
+        exit(139);
+    }
+
     // read the file
-    // readFile(argv[0]); CHANGEEEEE
-    readFile("src/DataFile/start.elf");
+    read_file(argv[1], memory);
+
+    // Run the emulator
     initializeRegisters();
-    //emulate();
-    terminate();
+    emulate(memory);
+    terminate(memory, output_path);
+
+    // Free all allocated memories
+    free(memory);
+    for (int8_t i = 0; i < NUM_REGISTERS; i++) {
+        free(general_purpose_register_list[i]);
+    }
+
     return EXIT_SUCCESS;
 }

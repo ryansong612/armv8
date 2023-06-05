@@ -5,73 +5,101 @@
 #include "emulate.h"
 #include "custombit.h"
 
+#define BRANCH_TYPE_START 29
+#define BRANCH_TYPE_END 31
+#define UNCONDITIONAL_OFFSET_START 0
+#define UNCONDITIONAL_OFFSET_END 25
+#define XN_START 5
+#define XN_END 9
+#define CONDITIONAL_OFFSET_START 5
+#define CONDITIONAL_OFFSET_END 23
+#define CONDITION_START 0
+#define CONDITION_END 3
+#define UNCONDITIONAL 0
+#define REGISTER 6
+#define CONDITIONAL 2
+#define EQ 0
+#define NE 1
+#define GE 10
+#define LT 11
+#define GT 12
+#define LE 13
+#define AL 14
+
 // Retrieve global variables
-extern GeneralPurposeRegister *generalPurposeRegisters[NUM_REGISTERS];
-extern GeneralPurposeRegister zeroRegister;
-extern uint64_t programCounter;
-extern PSTATE pStateRegister;
+extern general_purpose_register *general_purpose_register_list[NUM_REGISTERS];
+extern general_purpose_register zero_register;
+extern uint64_t program_counter;
+extern p_state p_state_register;
 
-bool execute_branch_unconditional(uint32_t instruction) {
+void execute_branch_unconditional(uint32_t instruction) {
     // Apply offset of simm26 * 4 (sign-extended to 64-bit) to the program counter
-    int64_t offset = extendSignBit(get_bits(instruction, 0, 26) << 2, 26);
-    programCounter += offset;
-    return true;
+    int64_t offset = extend_sign_bit(get_bits(instruction,
+                                            UNCONDITIONAL_OFFSET_START,
+                                            UNCONDITIONAL_OFFSET_END) * 4,
+                                   26);
+    program_counter += offset;
 }
 
-bool execute_branch_register(uint32_t instruction) {
+void execute_branch_register(uint32_t instruction) {
     // Sets the program counter to the specified address
-    programCounter = read_64(generalPurposeRegisters[get_bits(instruction, 5, 9)]);
-    return true;
+    program_counter = read_64(general_purpose_register_list[get_bits(instruction, XN_START, XN_END)]);
 }
 
-bool execute_branch_conditional(uint32_t instruction) {
+void execute_branch_conditional(uint32_t instruction) {
     // Applies offset of simm19 * 4 (sign-extended to 64-bit) to the program counter if the PState satisfies the
     // condition specified in bits 0-3
-    int32_t cond = get_bits(instruction, 0, 4);
-    bool toExecute = false;
+    uint32_t cond = get_bits(instruction, CONDITION_START, CONDITION_END);
+
+    bool to_execute = false;
     switch (cond) {
-        case 0:
-            toExecute = pStateRegister.zeroConditionFlag == 1;
+        case EQ:
+            to_execute = p_state_register.zero_condition_flag == 1;
             break;
-        case 1:
-            toExecute = pStateRegister.zeroConditionFlag == 0;
+        case NE:
+            to_execute = p_state_register.zero_condition_flag == 0;
             break;
-        case 10:
-            toExecute = pStateRegister.negativeConditionFlag == 1;
+        case GE:
+            to_execute = p_state_register.negative_condition_flag == p_state_register.overflow_condition_flag;
             break;
-        case 11:
-            toExecute = pStateRegister.negativeConditionFlag != 1;
+        case LT:
+            to_execute = p_state_register.negative_condition_flag != p_state_register.overflow_condition_flag;
             break;
-        case 12:
-            toExecute = pStateRegister.zeroConditionFlag == 0
-                    && pStateRegister.negativeConditionFlag == pStateRegister.overflowConditionFlag;
+        case GT:
+            to_execute = p_state_register.zero_condition_flag == 0
+                         && p_state_register.negative_condition_flag == p_state_register.overflow_condition_flag;
             break;
-        case 13:
-            toExecute = !(pStateRegister.zeroConditionFlag == 0
-                        && pStateRegister.negativeConditionFlag == pStateRegister.overflowConditionFlag);
+        case LE:
+            to_execute = !(p_state_register.zero_condition_flag == 0
+                           && p_state_register.negative_condition_flag == p_state_register.overflow_condition_flag);
             break;
-        case 14:
-            toExecute = true;
+        case AL:
+            to_execute = true;
             break;
         default:
-            return false;
+            to_execute = false;
     }
-    if (toExecute) {
-        int64_t offset = extendSignBit(get_bits(instruction, 0, 19) << 2, 26);
-        programCounter += offset;
+    if (to_execute) {
+        int64_t offset = extend_sign_bit(get_bits(instruction,
+                                                CONDITIONAL_OFFSET_START,
+                                                CONDITIONAL_OFFSET_END) * 4,
+                                       19);
+        program_counter += offset;
+    } else {
+        program_counter += 4;
     }
-    return true;
 }
 
-bool execute_branches(uint32_t instruction) {
-    switch (get_bits(instruction, 29, 31)) {
-        case 0:
-            return execute_branch_unconditional(instruction);
-        case 6:
-            return execute_branch_register(instruction);
-        case 4:
-            return execute_branch_conditional(instruction);
-        default:
-            return false;
+void execute_branches(uint32_t instruction) {
+    switch (get_bits(instruction, BRANCH_TYPE_START, BRANCH_TYPE_END)) {
+        case UNCONDITIONAL:
+            execute_branch_unconditional(instruction);
+            break;
+        case REGISTER:
+            execute_branch_register(instruction);
+            break;
+        case CONDITIONAL:
+            execute_branch_conditional(instruction);
+            break;
     }
 }
