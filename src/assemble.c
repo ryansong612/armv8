@@ -98,6 +98,11 @@ int main(int argc, char **argv) {
     dynarray_print(arr_output);
     dynarray_push(arr_output, 2);
     dynarray_print(arr_output);
+    for (int i = 3; i <= 21; i++) {
+        // testing dynamic property
+        dynarray_push(arr_output, i);
+    }
+    dynarray_print(arr_output);
     printf("%i\n", dynarray_pop(arr_output));
     dynarray_print(arr_output);
     read_file(argv[1]);
