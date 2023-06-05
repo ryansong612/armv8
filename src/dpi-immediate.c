@@ -212,10 +212,10 @@ void dpi_wide_move(uint32_t instruction) {
         // bit-width access is 32-bit
         switch (opc) {
             case MOVZ:
-                write_32(rd, op_32);
+                write_32(rd, op);
                 break;
             case MOVN:
-                write_32(rd, ~op_32);
+                write_32(rd, ~op);
                 break;
             case MOVK:
                 write_32(rd, masked);
