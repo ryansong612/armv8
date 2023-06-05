@@ -53,6 +53,26 @@ void dynarray_push(dynarray arr, uint8_t element) {
     arr->data[arr->size++] = element;
 }
 
+// logically removes an element from the end of a given dynarray
+uint8_t dynarray_pop(dynarray arr) {
+    uint8_t tail = arr->data[arr->size-1];
+    arr->size--;
+    return tail;
+}
+
+// prints the content of arr
+void dynarray_print(dynarray arr) {
+    printf("Array contents: ");
+    for (int i = 0; i < arr->size; i++) {
+        printf("%i", arr->data[i]);
+
+        if (i != arr->size - 1) {
+            printf(" ");
+        }
+    }
+    printf("\n");
+}
+
 // reads .s assembly file to lines in the form of strings in iteration
 void read_file(char *dst) {
     FILE *input;
@@ -74,6 +94,13 @@ void read_file(char *dst) {
 
 int main(int argc, char **argv) {
     arr_output = dynarray_create(DYNARRAY_LIMIT);
+    dynarray_push(arr_output, 1);
+    dynarray_print(arr_output);
+    dynarray_push(arr_output, 2);
+    dynarray_print(arr_output);
+    printf("%i\n", dynarray_pop(arr_output));
+    dynarray_print(arr_output);
     read_file(argv[1]);
+    dynarray_free(arr_output);
     return EXIT_SUCCESS;
 }
