@@ -33,5 +33,8 @@ assemble
 *.nav
 *.toc
 
+test_cases
 
 .idea
+
+*.bin

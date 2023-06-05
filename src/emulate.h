@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #ifndef ARMV8_32_EMULATE_H
 #define ARMV8_32_EMULATE_H
 
@@ -11,13 +9,13 @@ typedef struct {
     bool mode; // 1 if 64-bit readable
     bool zeroRegisterFlag; // 1 if it is a zero register
     bool programCounterFlag; // 1 if it is a program counter
-} GeneralPurposeRegister;
+} general_purpose_register;
 
 typedef struct {
-    bool negativeConditionFlag;
-    bool zeroConditionFlag;
-    bool carryConditionFlag;
-    bool overflowConditionFlag;
-} PSTATE;
+    bool negative_condition_flag;
+    bool zero_condition_flag;
+    bool carry_condition_flag;
+    bool overflow_condition_flag;
+} p_state;
 
 #endif //ARMV8_32_EMULATE_H

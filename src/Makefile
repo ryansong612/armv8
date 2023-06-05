@@ -1,7 +1,6 @@
 CC      ?= gcc
 CFLAGS  ?= -std=c17 -g\
 	-D_POSIX_SOURCE -D_DEFAULT_SOURCE\
-	-Wall -Werror -pedantic
 
 .SUFFIXES: .c .o
 .PHONY: all clean
@@ -30,3 +29,4 @@ dpi-register.o: dpi-register.h emulate.h readnwrite.h custombit.h
 dpi-immediate.o: dpi-immediate.h emulate.h readnwrite.h custombit.h
 
 emulate.o: dpi-immediate.h dpi-register.h parseLS.h parseBranches.h emulate.h readnwrite.h custombit.h
+
