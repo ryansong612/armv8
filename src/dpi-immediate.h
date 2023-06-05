@@ -2,8 +2,8 @@
 #include <stdbool.h>
 #include "emulate.h"
 
-#ifndef ARMV8_32_DPI_H
-#define ARMV8_32_DPI_H
+#ifndef ARMV8_32_DPI_IMMEDIATE_H
+#define ARMV8_32_DPI_IMMEDIATE_H
 
 void execute_DPIImmediate(uint32_t instruction);
 general_purpose_register * find_register(uint32_t key);
