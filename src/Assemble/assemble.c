@@ -63,34 +63,25 @@ func_ptr get_function(char* assembly_instruction) {
     return &assemble_DPI;
 }
 
-
-uint64_t program_counter;
+uint32_t program_counter;
 dynmap symbol_table;
 
-void remove_new_line(char* line) {
-    int len = strlen(line);
-    if (line[len - 1] == '\n') {
-        line[len - 1] = '\0';
-    }
-}
-
-// reads .s assembly file to lines in the form of strings in iteration
-void assemble(char *in, char *out) {
+int main(int argc, char **argv) {
     FILE *infile;
     FILE *outfile;
     char line[MAX_LINE_LENGTH];
 
     // dynarray output = dynarray_create(DYNARRAY_LIMIT);
 
-    infile = fopen(in, "r");
-    outfile = fopen(out, "wb");
+    infile = fopen(argv[1], "r");
+    outfile = fopen(argv[2], "wb");
 
     if (infile == NULL) {
         perror("File does not exist.\n");
         exit(EXIT_FAILURE);
     }
 
-    // Build the symbol table
+    // First pass : build the symbol table
     program_counter = 0;
     while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
         // Check if the line is a label
@@ -101,6 +92,7 @@ void assemble(char *in, char *out) {
         }
     }
 
+    // Second pass: assemble instructions
     while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
         // Determines which parsing function to be used: could be a NOP function, directive, DPI, Branch or Single DTI
         func_ptr parsing_function = get_function(line);
@@ -110,23 +102,5 @@ void assemble(char *in, char *out) {
 
     fclose(infile);
     fclose(outfile);
-}
-
-int main(int argc, char **argv) {
-//    arr_output = dynarray_create(DYNARRAY_LIMIT);
-//    dynarray_push(arr_output, 1);
-//    dynarray_print(arr_output);
-//    dynarray_push(arr_output, 2);
-//    dynarray_print(arr_output);
-//    for (int i = 3; i <= 21; i++) {
-//        // testing dynamic property
-//        dynarray_push(arr_output, i);
-//    }
-//    dynarray_print(arr_output);
-//    printf("%i\n", dynarray_pop(arr_output));
-//    dynarray_print(arr_output);
-//    read_file(argv[1]);
-//    dynarray_free(arr_output);
-
     return EXIT_SUCCESS;
 }
