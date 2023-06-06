@@ -5,14 +5,15 @@
 #include <stdint.h>
 #include <_ctype.h>
 
+
 #define ADD 0
 #define ADDS 1
 #define SUB 2
 #define SUBS 3
 #define ZERO_REGISTER_ID 31
 #define IMMEDIATE '#'
-#define REGISTER_32 'X'
-#define REGISTER_64 'W'
+#define REGISTER_32 'w'
+#define REGISTER_64 'x'
 #define IMMEDIATE_SHIFT 12
 #define ASR 2
 #define REGISTER_ADDRESS_SIZE 5
@@ -22,6 +23,19 @@
 #define WIDE_MOVE_OPI 5
 
 typedef uint32_t (*func_ptr)(char *);
+
+void print_binary(uint32_t number) {
+    // Iterate over each bit of the number
+    for (int i = 31; i >= 0; i--) {
+        // Right shift the number by 'i' bits and perform bitwise AND with 1
+        uint32_t bit = (number >> i) & 1;
+        printf("%x", bit);
+        if (i % 4 == 0) {
+            printf(" ");
+        }
+    }
+    printf("\n");
+}
 
 uint32_t parse_arithmetic(char *assembler_instruction) {
     // convert char* to char[] for tokenization
@@ -54,8 +68,8 @@ uint32_t parse_arithmetic(char *assembler_instruction) {
 
     // begin tokenization
     // extracting rd
-    token = strtok(assembler_instruction_arr, ", ");
-    assert (token != NULL);
+    token = strtok(NULL, ", ");
+    printf("%s\n", token);
 
     // setting sf value
     sf = token[0] == REGISTER_64;
@@ -96,31 +110,31 @@ uint32_t parse_arithmetic(char *assembler_instruction) {
             // extracting num_of_bits to shift
             token = strtok(NULL, " ");
             assert (token != NULL);
-            uint32_t sh = strtol(token + 1, NULL, 16) == IMMEDIATE_SHIFT;
+            uint32_t sh = strtol(token + 1, NULL, 10) == IMMEDIATE_SHIFT;
 
             // assembling bits
-            assembled_instruction += sf;
-            assembled_instruction <<= 1;
+            assembled_instruction |= sf;
 
-            assembled_instruction += opc;
             assembled_instruction <<= 2;
+            assembled_instruction |= opc;
 
-            assembled_instruction += IMMEDIATE_BIT_FLAG;
             assembled_instruction <<= 3;
+            assembled_instruction |= IMMEDIATE_BIT_FLAG;
 
-            assembled_instruction += ARITHMETIC_OPI;
             assembled_instruction <<= 3;
+            assembled_instruction |= ARITHMETIC_OPI;
 
-            assembled_instruction += sh;
             assembled_instruction <<= 1;
+            assembled_instruction |= sh;
 
-            assembled_instruction += imm12;
             assembled_instruction <<= 12;
+            assembled_instruction |= imm12;
 
-            assembled_instruction += rn;
             assembled_instruction <<= REGISTER_ADDRESS_SIZE;
+            assembled_instruction |= rn;
 
-            assembled_instruction += rd;
+            assembled_instruction <<= REGISTER_ADDRESS_SIZE;
+            assembled_instruction |= rd;
             break;
         }
         case REGISTER_64:
@@ -145,39 +159,38 @@ uint32_t parse_arithmetic(char *assembler_instruction) {
             uint32_t shift_imm = strtol(token + 1, NULL, 16);
 
             // assembling bits
-            assembled_instruction += sf;
-            assembled_instruction <<= 1;
+            assembled_instruction |= sf;
 
-            assembled_instruction += opc;
             assembled_instruction <<= 2;
+            assembled_instruction |= opc;
 
             // M = 0 for arithmetic in dpi-register
-            assembled_instruction += 0;
             assembled_instruction <<= 1;
+            assembled_instruction |= 0;
 
-            assembled_instruction += REGISTER_BIT_FLAG;
             assembled_instruction <<= 3;
+            assembled_instruction |= REGISTER_BIT_FLAG;
 
-            assembled_instruction += 1;
             assembled_instruction <<= 1;
+            assembled_instruction |= 1;
 
-            assembled_instruction += shift_type;
             assembled_instruction <<= 2;
+            assembled_instruction |= shift_type;
 
-            assembled_instruction += 0;
             assembled_instruction <<= 1;
+            assembled_instruction |= 0;
 
-            assembled_instruction += rm;
-            assembled_instruction += REGISTER_ADDRESS_SIZE;
+            assembled_instruction <<= REGISTER_ADDRESS_SIZE;
+            assembled_instruction |= rm;
 
-            assembled_instruction += shift_imm;
             assembled_instruction <<= 6;
+            assembled_instruction |= shift_imm;
 
-            assembled_instruction += rn;
             assembled_instruction <<= 5;
+            assembled_instruction |= rn;
 
-            assembled_instruction += rd;
             assembled_instruction <<= 5;
+            assembled_instruction |= rd;
             break;
         }
     }
@@ -196,8 +209,12 @@ func_ptr parse_dpi(char *assembler_instruction) {
     if (strcmp(token, "add") == 0) {
         return &parse_arithmetic;
     }
+    return NULL;
 }
 
 int main(void) {
-    parse_dpi("add xor, x2, #1642, lsl #12");
+    char *assembler_instruction = "add x24, x2, #1642, lsl #12";
+    func_ptr parser = parse_dpi(assembler_instruction);
+    uint32_t instruction = parser(assembler_instruction);
+    print_binary(instruction);
 }
