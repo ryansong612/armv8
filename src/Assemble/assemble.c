@@ -19,7 +19,7 @@ void read_file(char *dst) {
     FILE *input;
     char line[MAX_LINE_LENGTH];
 
-    dynarray output = dynarray_create(DYNARRAY_LIMIT);
+    dynarray output = dynarray_create();
 
     input = fopen(dst, "r");
 
@@ -29,14 +29,13 @@ void read_file(char *dst) {
     }
 
     while (fgets(line, MAX_LINE_LENGTH, input) != NULL) {
-        assembleInstruction(line);
     }
 
     fclose(input);
 }
 
 int main(int argc, char **argv) {
-    arr_output = dynarray_create(DYNARRAY_LIMIT);
+    arr_output = dynarray_create();
     dynarray_push(arr_output, 1);
     dynarray_print(arr_output);
     dynarray_push(arr_output, 2);
