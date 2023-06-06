@@ -48,7 +48,7 @@ void read_file(char *dst) {
 
     while (fgets(line, MAX_LINE_LENGTH, input) != NULL) {
         remove_new_line(line);
-        assembleInstruction(line);
+        //assembleInstruction(line);
     }
 
     fclose(input);
