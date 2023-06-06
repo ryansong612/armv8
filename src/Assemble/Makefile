@@ -5,7 +5,7 @@ BUILD	=	assemble
 all:	$(BUILD)
 
 clean:
-	/bin/rm -f $(BUILD) *.o core
+	/bin/rm -f *.o assemble
 
 assemble: assemble.o dynmap.o
 

@@ -12,8 +12,12 @@
 
 #define MAX_LINE_LENGTH 256
 
-uint64_t programCounter;
-dynmap symbolTable;
+typedef int32_t (*assembleDPI)(char* assembly_instruction);
+typedef int32_t (*assembleDPI)(char* assembly_instruction);
+typedef int32_t (*assembleDPI)(char* assembly_instruction);
+
+uint64_t program_counter;
+dynmap symbol_table;
 
 void remove_new_line(char* line) {
     int len = strlen(line);
@@ -37,12 +41,13 @@ void read_file(char *dst) {
     }
 
     // Build the symbol table
-    programCounter = 0;
+    program_counter = 0;
     while (fgets(line, MAX_LINE_LENGTH, input) != NULL) {
         // Check if the line is a label
-        if (isalpha(line[0]) && line[strlen(line) - 2] == ':') { // len - 2 due to '\0'
+        if (isalpha(line[0]) && line[strlen(line) - 1] == ':') { // len - 2 due to '\0'
             // add an entry to the table where key is label and value is address
-            dynmap_add(symbolTable, line, programCounter);
+            line[strlen(line) - 1] = '\0';
+            dynmap_add(symbol_table, line, program_counter);
         }
     }
 
