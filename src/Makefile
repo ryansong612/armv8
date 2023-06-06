@@ -7,26 +7,26 @@ CFLAGS  ?= -std=c17 -g\
 
 all: assemble emulate
 
-assemble: assemble.o
+assemble: Assemble/assemble.o
 
-emulate: emulate.o
+emulate: Emulate/emulate.o
 
 clean:
 	$(RM) *.o assemble emulate
 	
-emulate:       emulate.o custombit.o dpi-immediate.o dpi-register.o parseLS.o parseBranches.o readnwrite.o
+emulate:       Emulate/emulate.o custombit.o dpi-immediate.o dpi-register.o parseLS.o parseBranches.o readnwrite.o
 
-custombit.o: custombit.h
+custombit.o: Emulate/custombit.h
 
-readnwrite.o: readnwrite.h emulate.h
+readnwrite.o: Emulate/readnwrite.h emulate.h
 
-parseBranches.o: parseBranches.h emulate.h readnwrite.h custombit.h
+parseBranches.o: Emulate/parseBranches.h emulate.h readnwrite.h custombit.h
 
-parseLS.o: parseLS.h emulate.h readnwrite.h custombit.h
+parseLS.o: Emulate/parseLS.h emulate.h readnwrite.h custombit.h
 
-dpi-register.o: dpi-register.h emulate.h readnwrite.h custombit.h
+dpi-register.o: Emulate/dpi-register.h emulate.h readnwrite.h custombit.h
 
-dpi-immediate.o: dpi-immediate.h emulate.h readnwrite.h custombit.h
+dpi-immediate.o: Emulate/dpi-immediate.h emulate.h readnwrite.h custombit.h
 
-emulate.o: dpi-immediate.h dpi-register.h parseLS.h parseBranches.h emulate.h readnwrite.h custombit.h
+emulate.o: Emulate/dpi-immediate.h dpi-register.h parseLS.h parseBranches.h emulate.h readnwrite.h custombit.h
 

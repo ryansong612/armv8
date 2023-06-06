@@ -78,6 +78,8 @@ void read_file(char *dst) {
     FILE *input;
     char line[MAX_LINE_LENGTH];
 
+    dynarray output = dynarray_create(DYNARRAY_LIMIT);
+
     input = fopen(dst, "r");
 
     if (input == NULL) {
@@ -86,7 +88,7 @@ void read_file(char *dst) {
     }
 
     while (fgets(line, MAX_LINE_LENGTH, input) != NULL) {
-        printf("%s", line);
+        assembleInstruction(line);
     }
 
     fclose(input);
