@@ -21,5 +21,6 @@ typedef struct {
 	uint32_t rd;
 } dpi_register;
 
+uint32_t assemble_DPI(char *assembly_instruction);
 
 #endif //ARMV8_32_DPI_H
