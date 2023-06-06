@@ -8,4 +8,4 @@ clean:
 	cd Emulate; make clean; cd ../Assemble; make clean
 
 libs:
-	cd Emulate; make; cd ../Assemble; make clean
+	cd Emulate; make; cd ../Assemble; make
