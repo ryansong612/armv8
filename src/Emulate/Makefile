@@ -5,22 +5,22 @@ BUILD	=	emulate
 all:	$(BUILD)
 
 clean:
-	/bin/rm -f *.o emulate
+	/bin/rm -f *.o ../BitUtils/*.o emulate
 
-emulate: emulate.o custombit.o dpi-immediate.o dpi-register.o parseLS.o parseBranches.o readnwrite.o
+emulate: emulate.o ../BitUtils/custombit.o dpi-immediate.o dpi-register.o parseLS.o parseBranches.o readnwrite.o
 
-custombit.o: custombit.h
+custombit.o: ../BitUtils/custombit.h
 
 readnwrite.o: readnwrite.h emulate.h
 
-parseBranches.o: parseBranches.h emulate.h readnwrite.h custombit.h
+parseBranches.o: parseBranches.h emulate.h readnwrite.h ../BitUtils/custombit.h
 
-parseLS.o: parseLS.h emulate.h readnwrite.h custombit.h
+parseLS.o: parseLS.h emulate.h readnwrite.h ../BitUtils/custombit.h
 
-dpi-register.o: dpi-register.h emulate.h readnwrite.h custombit.h
+dpi-register.o: dpi-register.h emulate.h readnwrite.h ../BitUtils/custombit.h
 
-dpi-immediate.o: dpi-immediate.h emulate.h readnwrite.h custombit.h
+dpi-immediate.o: dpi-immediate.h emulate.h readnwrite.h ../BitUtils/custombit.h
 
-emulate.o: dpi-immediate.h emulate.h parseLS.h parseBranches.h emulate.h readnwrite.h custombit.h
+emulate.o: dpi-immediate.h emulate.h parseLS.h parseBranches.h emulate.h readnwrite.h ../BitUtils/custombit.h
 
 

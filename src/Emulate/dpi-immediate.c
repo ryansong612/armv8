@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
-#include "custombit.h"
+#include "../BitUtils/custombit.h"
 #include "dpi-immediate.h"
 #include "emulate.h"
 #include "readnwrite.h"

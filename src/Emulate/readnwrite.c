@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "emulate.h"
-#include "custombit.h"
+#include "../BitUtils/custombit.h"
 
 // returns the val of gpr in 64-bit
 int64_t read_64(general_purpose_register *gpr) {

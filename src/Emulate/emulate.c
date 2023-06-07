@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "emulate.h"
-#include "custombit.h"
+#include "../BitUtils/custombit.h"
 #include "dpi-immediate.h"
 #include "dpi-register.h"
 #include "parseLS.h"

@@ -3,7 +3,7 @@
 #include "parseBranches.h"
 #include "readnwrite.h"
 #include "emulate.h"
-#include "custombit.h"
+#include "../BitUtils/custombit.h"
 
 #define BRANCH_TYPE_START 29
 #define BRANCH_TYPE_END 31
