@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
     // Second pass: assemble instructions
     while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
         // Determines which parsing function to be used: could be a NOP function, directive, DPI, Branch or Single DTI
-        func_ptr parsing_function = get_function(line);
+        func_ptr parsing_function = get_function(line, program_counter);
         uint32_t binary_instruction = parsing_function(line);
         fwrite(&binary_instruction, sizeof(binary_instruction), 1, outfile); // I think it's like that not sure though
     }
