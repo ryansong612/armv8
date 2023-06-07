@@ -42,6 +42,10 @@ extern uint64_t program_counter;
 extern p_state p_state_register;
 
 // ------------------------------------- CUSTOM HELPER FUNCTIONS -------------------------------------------------------
+/*
+ * With a provided key, this function will loop through the list of registers and return a pointer towards
+ * the register with its id equal to the  key
+*/
 general_purpose_register* find_register(uint32_t key) {
     if (key == ZERO_REGISTER_ID) {
         return &zero_register;
@@ -56,6 +60,13 @@ general_purpose_register* find_register(uint32_t key) {
     return NULL;
 }
 
+/*
+ * A helper function to parse instructions to determine which of the 4 available operations to proceed with
+ * the function will take the two operands for the operation and write the result to the destination register
+ * if an update to the pState register is required, the flags will also be updated within this function.
+ *
+ * Note: this helper is only used when bit-width access is 64-bit
+*/
 void arithmetic_helper_64(general_purpose_register *rd, uint32_t instruction, int64_t rn_val, int64_t op2) {
     // case: opc (29-30)
     switch (get_bits(instruction, OPC_START, OPC_END)) {
@@ -105,6 +116,14 @@ void arithmetic_helper_64(general_purpose_register *rd, uint32_t instruction, in
     }
 }
 
+/*
+ * A helper function to parse instructions to determine which of the 4 available operations to proceed with
+ * the function will take the two operands for the operation and write the result to the destination register
+ * if an update to the pState register is required, the flags will also be updated within this function.
+ *
+ * Note: this helper is only used when bit-width access is 32-bit
+*/
+
 void arithmetic_helper_32(general_purpose_register *rd, uint32_t instruction, int32_t rn_val, int32_t op2) {
     // case: opc (29-30)
     switch (get_bits(instruction, OPC_START, OPC_END)) {
@@ -151,6 +170,10 @@ void arithmetic_helper_32(general_purpose_register *rd, uint32_t instruction, in
 }
 
 // ------------------------------------- Executing Operations ----------------------------------------------------------
+/*
+ * This function takes an instruction represented by an unsigned 32-bit integer as an input, parses it to the arithmetic
+ * helpers to determine whether or how to write the arithmetically calculated values to destination registers
+ */
 void dpi_arithmetic(uint32_t instruction) {
     general_purpose_register *rd = find_register(get_bits(instruction, RD_START, RD_END));
     general_purpose_register *rn = find_register(get_bits(instruction, RN_START, RN_END));
@@ -175,6 +198,10 @@ void dpi_arithmetic(uint32_t instruction) {
     }
 }
 
+/*
+ * This function takes an instruction represented by an unsigned 32-bit integer as an input, parses it to the arithmetic
+ * helpers to determine whether or how to write the bit-wise modified values to destination registers
+ */
 void dpi_wide_move(uint32_t instruction) {
 
     general_purpose_register *rd = find_register(get_bits(instruction, 0, 4));
@@ -226,7 +253,12 @@ void dpi_wide_move(uint32_t instruction) {
     }
 }
 
-// Assuming all registers have their bit arrays reversed
+/*
+ * This function will be called by the main function in emulate.c
+ * It takes an instruction represented by an unsigned 32-bit integer as an input, and determines whether an arithmetic
+ * or wide-move operation should be made based on the opi code of the bits. Then it will pass the instruction to the
+ * arithmetic and wide-move parsers to further the process
+ */
 void execute_DPIImmediate(uint32_t instruction) {
     // determining operation
     // CASE 1: when opi is 010 -> arithmetic
@@ -246,5 +278,4 @@ void execute_DPIImmediate(uint32_t instruction) {
 
     // Increment Program Counter by 4
     program_counter += 4;
-    return;
 }
