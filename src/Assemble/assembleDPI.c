@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <_ctype.h>
+#include <ctype.h>
 #include <stdbool.h>
 
 
@@ -29,19 +29,19 @@
 #define WIDE_MOVE_OPI 5
 
 typedef uint32_t (*func_ptr)(char *);
-
-void print_binary(uint32_t number) {
-    // Iterate over each bit of the number
-    for (int i = 31; i >= 0; i--) {
-        // Right shift the number by 'i' bits and perform bitwise AND with 1
-        uint32_t bit = (number >> i) & 1;
-        printf("%x", bit);
-        if (i % 4 == 0) {
-            printf(" ");
-        }
-    }
-    printf("\n");
-}
+//
+//void print_binary(uint32_t number) {
+//    // Iterate over each bit of the number
+//    for (int i = 31; i >= 0; i--) {
+//        // Right shift the number by 'i' bits and perform bitwise AND with 1
+//        uint32_t bit = (number >> i) & 1;
+//        printf("%x", bit);
+//        if (i % 4 == 0) {
+//            printf(" ");
+//        }
+//    }
+//    printf("\n");
+//}
 
 uint32_t parse_arithmetic(char *assembler_instruction) {
     // convert char* to char[] for tokenization
@@ -487,30 +487,7 @@ func_ptr parse_dpi(char *assembler_instruction) {
     return NULL;
 }
 
-int main(void) {
-//    char *assembler_instruction = "orr w1, w1, w6, asr #3";
-//    func_ptr parser = parse_dpi(assembler_instruction);
-//    uint32_t instruction = parser(assembler_instruction);
-//    print_binary(instruction);
-
-
-//    unsigned long n = strlen(assembler_instruction);
-//    char assembler_instruction_arr[n + 1];
-//    for (int i = 0; i <= n; i++) {
-//        // retrieving every instruction after operand
-//        assembler_instruction_arr[i] = assembler_instruction[i];
-//    }
-//    char *token = strtok(assembler_instruction_arr, ", ");
-//    printf("%s\n", token);
-//    token = strtok(NULL, ", ");
-//    printf("%s\n", token);
-//    token = strtok(NULL, ", ");
-//    printf("%s\n", token);
-//    token = strtok(NULL, ", ");
-//    printf("%s\n", token);
-//    token = strtok(NULL, " ");
-//    printf("%s\n", token);
-//    token = strtok(NULL, " ");
-//    printf("%s\n", token);
-    return 0;
+uint32_t assemble_DPI(char *assembler_instruction) {
+    func_ptr parse_func = parse_dpi(assembler_instruction);
+    return (parse_func)(assembler_instruction);
 }

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <regex.h>
+#include "dynmap.h"
 
 #define SF 30
 #define U 24
@@ -12,10 +13,10 @@
 #define XN 5
 #define MB 1000000
 
-regex_t unsigned_regex;
-regex_t pre_index_regex;
-regex_t post_index_regex;
-regex_t register_regex;
+//regex_t unsigned_regex;
+//regex_t pre_index_regex;
+//regex_t post_index_regex;
+//regex_t register_regex;
 
 extern dynmap symbol_table;
 
@@ -38,46 +39,35 @@ struct load_literal_IR {
 
 typedef struct load_literal_IR *load_literal_IR;
 
-void initialize_regex() {
-    int return_value;
+extern uint32_t program_counter;
 
-    return_value = regcomp(&unsigned_regex, "\[x[0-3][0-9]?(, #[[0-9]*)?]", REG_EXTENDED);
-    if (return_value) {
-        printf("Cannot compile unsigned regex.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    return_value = regcomp(&pre_index_regex, "\[x[0-3][0-9]?, #[0-9]*]!", REG_EXTENDED);
-    if (return_value) {
-        printf("Cannot compile pre-index regex.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    return_value = regcomp(&post_index_regex, "\[x[0-3][0-9]?], #[0-9]*", REG_EXTENDED);
-    if (return_value) {
-        printf("Cannot compile post-index regex.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    return_value = regcomp(&register_regex, "\[x[0-3][0-9]?, x[0-3][0-9]?(, lsl #[0-9]*)?]", REG_EXTENDED);
-    if (return_value) {
-        printf("Cannot compile register regex.\n");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void print_binary(int64_t number) {
-    // Iterate over each bit of the number
-    for (int i = 63; i >= 0; i--) {
-        // Right shift the number by 'i' bits and perform bitwise AND with 1
-        int64_t bit = (number >> i) & 1;
-        printf("%lx", bit);
-        if (i % 4 == 0) {
-            printf(" ");
-        }
-    }
-    printf("\n");
-}
+//void initialize_regex() {
+//    int return_value;
+//
+//    return_value = regcomp(&unsigned_regex, "\[x[0-3][0-9]?(, #[[0-9]*)?]", REG_EXTENDED);
+//    if (return_value) {
+//        printf("Cannot compile unsigned regex.\n");
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    return_value = regcomp(&pre_index_regex, "\[x[0-3][0-9]?, #[0-9]*]!", REG_EXTENDED);
+//    if (return_value) {
+//        printf("Cannot compile pre-index regex.\n");
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    return_value = regcomp(&post_index_regex, "\[x[0-3][0-9]?], #[0-9]*", REG_EXTENDED);
+//    if (return_value) {
+//        printf("Cannot compile post-index regex.\n");
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    return_value = regcomp(&register_regex, "\[x[0-3][0-9]?, x[0-3][0-9]?(, lsl #[0-9]*)?]", REG_EXTENDED);
+//    if (return_value) {
+//        printf("Cannot compile register regex.\n");
+//        exit(EXIT_FAILURE);
+//    }
+//}
 
 void print_struct(singleDTI_IR struct_ptr) {
     // Iterate over each bit of the number
@@ -111,7 +101,7 @@ uint32_t load_literal_assemble(load_literal_IR struct_ptr) {
     return output;
 }
 
-void load_literal(load_literal_IR struct_ptr, char* target_register, char* address, uint32_t program_counter) {
+void load_literal(load_literal_IR struct_ptr, char* target_register, char* address) {
     if (target_register[0] == 'x') {
         struct_ptr->sf = 1;
     } else {
@@ -236,7 +226,7 @@ uint32_t singleDTI_construct(singleDTI_IR struct_ptr) {
 }
 
 
-void assemble_single_DTI(char *assembly_instruction, uint32_t program_counter) {
+void assemble_single_DTI(char *assembly_instruction) {
     // Converting char * into char[]
     unsigned long n = strlen(assembly_instruction);
     char assembly_instruction_arr[n + 1];
@@ -270,7 +260,7 @@ void assemble_single_DTI(char *assembly_instruction, uint32_t program_counter) {
     if (address[0] != '[') {
         load_literal_IR instruction_struct;
         load_literal_IR struct_ptr = &instruction_struct;
-        load_literal(struct_ptr, target_register, address, program_counter);
+        load_literal(struct_ptr, target_register, address);
         print_binary(load_literal_assemble(struct_ptr));
     } else {
         singleDTI_IR instruction_struct;
@@ -295,19 +285,25 @@ void assemble_single_DTI(char *assembly_instruction, uint32_t program_counter) {
         struct_ptr->rt = atoi(target_register + 1);
 
         // Pre-index
-        if (!regexec(&pre_index_regex, address, 0, NULL, 0)) {
+        if (address[strlen(address) - 1] == '!') {
             printf("Pre\n");
             pre_index(struct_ptr, address);
             print_struct(struct_ptr);
-        } else if (!regexec(&post_index_regex, address, 0, NULL, 0)) {
-            printf("post\n");
-            post_index(struct_ptr, address);
-            print_struct(struct_ptr);
-        } else if (!regexec(&register_regex, address, 0, NULL, 0)) {
+        } else if (address[strlen(address) - 1] != ']') {
             printf("register\n");
             register_offset(struct_ptr, address);
             print_struct(struct_ptr);
-        } else if (!regexec(&unsigned_regex, address, 0, NULL, 0)) {
+        } else if (strchr(address, '#') == NULL) {
+            if (strchr(address, ',') == NULL) {
+                printf("register\n");
+                unsigned_offset(struct_ptr, address);
+                print_struct(struct_ptr);
+            } else {
+                printf("Unsigned\n");
+                register_offset(struct_ptr, address);
+                print_struct(struct_ptr);
+            }
+        } else if (strchr(address, '#') != NULL) {
             // Bug?
             printf("Unsigned\n");
             unsigned_offset(struct_ptr, address);

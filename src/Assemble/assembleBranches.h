@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #ifndef ARMV8_32_ASSEMBLEBRANCHES_H
 #define ARMV8_32_ASSEMBLEBRANCHES_H
 
