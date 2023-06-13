@@ -28,19 +28,7 @@ void read_file(char *dst, uint8_t *memory) {
     }
 
     fread(memory, 1, MAX_FILE_SIZE, ptr);
-
-    // Chunking them into instructions (4 bytes)
-    // size_t numInstructions = fileSize / sizeof(uint32_t);
-
     fclose(ptr);
-
-    /*
-    // Debugging
-    for (size_t i=0; i < numInstructions; i++) {
-        printf("%zu:", i);
-        printBinary(instructions[i]);
-    }
-    */
 }
 
 // ---------------------------------------------- INITIALIZING REGISTERS -----------------------------------------------
@@ -70,6 +58,11 @@ void initializeRegisters(void) {
     }
 }
 
+/*
+ * Emulator loop. Takes an instruction with consists of 4 bytes of memory, and send to different functions based on
+ * op0. The instructions can be categorised into DPI Immediate, DPI Register, Loads and Stores and Branches. Special
+ * Instructions include HALT, which terminates the emulator and NOP, which just moves on to the next instruction.
+ */
 void emulate(uint8_t *memory) {
     while (true) {
         uint32_t current_instruction = 0;
@@ -103,6 +96,9 @@ void emulate(uint8_t *memory) {
     }
 }
 // -------------------------------------------------- TERMINATION ------------------------------------------------------
+/*
+ * Prints the output of the emulator into the file specified by the output_path.
+ */
 void terminate(uint8_t *memory, char *output_path) {
     // Create file
     FILE *out = fopen(output_path, "w");
