@@ -70,7 +70,6 @@ int main(int argc, char **argv) {
     FILE *infile;
     FILE *outfile;
     char line[MAX_LINE_LENGTH];
-
     // dynarray output = dynarray_create(DYNARRAY_LIMIT);
 
     infile = fopen(argv[1], "r");
@@ -81,23 +80,28 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
+
     // First pass : build the symbol table
+    symbol_table = dynmap_create();
     program_counter = 0;
     while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
         // Check if the line is a label
-        if (isalpha(line[0]) && line[strlen(line) - 1] == ':') { // len - 2 due to '\0'
+        if (isalpha(line[0]) && line[strlen(line) - 2] == ':') { // len - 2 due to '\0'
             // add an entry to the table where key is label and value is address
             line[strlen(line) - 1] = '\0';
             dynmap_add(symbol_table, line, program_counter);
         }
+        program_counter += 4;
     }
 
+    program_counter = 0;
     // Second pass: assemble instructions
     while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
         // Determines which parsing function to be used: could be a NOP function, directive, DPI, Branch or Single DTI
         func_ptr parsing_function = get_function(line);
         uint32_t binary_instruction = parsing_function(line);
         fwrite(&binary_instruction, sizeof(binary_instruction), 1, outfile); // I think it's like that not sure though
+        program_counter += 4;
     }
 
     fclose(infile);
