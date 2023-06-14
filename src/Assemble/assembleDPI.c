@@ -47,14 +47,13 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
     // convert char* to char[] for tokenization
     unsigned long n = strlen(assembler_instruction);
     char assembler_instruction_arr[n + 1];
-    for (int i = 0; i <= n; i++) {
-        // retrieving every instruction after operand
-        assembler_instruction_arr[i] = assembler_instruction[i];
-    }
+
+    strcpy(assembler_instruction_arr, assembler_instruction);
 
     // defining variables
     bool alias_rd = false;
     bool alias_rn = false;
+    bool alias_mov = false;
     uint32_t rd;
     uint32_t rn;
     uint32_t sf;
@@ -88,6 +87,9 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
         opc = SUBS;
         rn = ZERO_REGISTER_ID;
         alias_rn = true;
+    } else if (strcmp(token, "mov") == 0) {
+        opc = SUBS;
+        alias_mov = true;
     }
 
     // begin tokenization
@@ -113,6 +115,9 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
     } else {
         if (!alias_rn) {
             rn = strtol(token + 1, NULL, 10);
+        }
+        if (alias_mov) {
+            rn = rd;
         }
     }
 
@@ -226,10 +231,8 @@ static uint32_t parse_logic(char *assembler_instruction) {
     // convert char* to char[] for tokenization
     unsigned long instruction_length = strlen(assembler_instruction);
     char assembler_instruction_arr[instruction_length + 1];
-    for (int i = 0; i <= instruction_length; i++) {
-        // retrieving every instruction after operand
-        assembler_instruction_arr[i] = assembler_instruction[i];
-    }
+
+    strcpy(assembler_instruction_arr, assembler_instruction);
 
     uint32_t sf;
     uint32_t opc;
@@ -280,8 +283,6 @@ static uint32_t parse_logic(char *assembler_instruction) {
         n = 1;
         rn = ZERO_REGISTER_ID;
         alias_rn = true;
-    }  else if (strcmp(token, "mov") == 0) {
-        // TODO: to be modified
     }
 
     // extracting Rd
@@ -373,9 +374,8 @@ static uint32_t parse_logic(char *assembler_instruction) {
 static uint32_t parse_wide_move(char *assembler_instruction) {
     unsigned long instruction_length = strlen(assembler_instruction);
     char assembler_instruction_arr[instruction_length + 1];
-    for (int i = 0; i <= instruction_length; i++) {
-        assembler_instruction_arr[i] = assembler_instruction[i];
-    }
+
+    strcpy(assembler_instruction_arr, assembler_instruction);
 
     uint32_t sf;
     uint32_t opc;
@@ -443,12 +443,110 @@ static uint32_t parse_wide_move(char *assembler_instruction) {
     return assembled_instruction;
 }
 
+static uint32_t parse_multiply(char *assembler_instruction) {
+    unsigned long instruction_length = strlen(assembler_instruction);
+    char assembler_instruction_arr[instruction_length + 1];
+
+    strcpy(assembler_instruction_arr, assembler_instruction);
+
+    uint32_t sf;
+    uint32_t opc = 0;
+    uint32_t multiply_encoding_21_28 = 216;
+    uint32_t rm;
+    uint32_t x;
+    uint32_t ra;
+    uint32_t rn;
+    uint32_t rd;
+
+    bool alias_ra = false;
+
+    char *token = strtok(assembler_instruction_arr, " ");
+
+    if (strcmp(token, "madd") == 0) {
+        x = 0;
+    } else if (strcmp(token, "msub") == 0) {
+        x = 1;
+    } else if (strcmp(token, "mul") == 0) {
+        x = 0;
+        alias_ra = true;
+        ra = ZERO_REGISTER_ID;
+    } else if (strcmp(token, "meng") == 0) {
+        x = 1;
+        alias_ra = true;
+        ra = ZERO_REGISTER_ID;
+    }
+
+    // extracting Rd
+    token = strtok(NULL, ", ");
+    assert (token != NULL);
+    sf = token[0] == BIT_WIDTH_64;
+    if (isalpha(token[1])) {
+        rd = ZERO_REGISTER_ID;
+    } else {
+        rd = strtol(token + 1, NULL, 10);
+    }
+
+    // extracting Rn
+    token = strtok(NULL, ", ");
+    assert(token != NULL);
+    if (isalpha(token[1])) {
+        rn = ZERO_REGISTER_ID;
+    } else {
+        rn = strtol(token + 1, NULL, 10);
+    }
+
+    // extracting Rm
+    token = strtok(NULL, ", ");
+    assert(token != NULL);
+    if (isalpha(token[1])) {
+        rm = ZERO_REGISTER_ID;
+    } else {
+        rn = strtol(token + 1, NULL, 10);
+    }
+
+    // extracting Ra
+    token = strtok(NULL, ", ");
+    assert(token != NULL);
+    if (!alias_ra) {
+        if (isalpha(token[1])) {
+            ra = ZERO_REGISTER_ID;
+        } else {
+            ra = strtol(token + 1, NULL, 10);
+        }
+    }
+
+    // Assembling instructions into binary
+    uint32_t assembled_instruction = sf;
+
+    assembled_instruction <<= 2;
+    assembled_instruction /= opc;
+
+    assembled_instruction <<= 8;
+    assembled_instruction /= multiply_encoding_21_28;
+
+    assembled_instruction <<= REGISTER_ADDRESS_SIZE;
+    assembled_instruction /= rm;
+
+    assembled_instruction <<= 1;
+    assembled_instruction /= x;
+
+    assembled_instruction <<= REGISTER_ADDRESS_SIZE;
+    assembled_instruction /= ra;
+
+    assembled_instruction <<= REGISTER_ADDRESS_SIZE;
+    assembled_instruction /= rn;
+
+    assembled_instruction <<= REGISTER_ADDRESS_SIZE;
+    assembled_instruction /= rd;
+
+    return assembled_instruction;
+}
+
 static func_ptr parse_dpi(char *assembler_instruction) {
     unsigned long n = strlen(assembler_instruction);
     char assembler_instruction_arr[n + 1];
-    for (int i = 0; i <= n; i++) {
-        assembler_instruction_arr[i] = assembler_instruction[i];
-    }
+
+    strcpy(assembler_instruction_arr, assembler_instruction);
 
     char *token = strtok(assembler_instruction_arr, " ");
 
@@ -459,7 +557,8 @@ static func_ptr parse_dpi(char *assembler_instruction) {
     || strcmp(token, "cmp") == 0
     || strcmp(token, "cmn") == 0
     || strcmp(token, "neg") == 0
-    || strcmp(token, "negs") == 0) {
+    || strcmp(token, "negs") == 0
+    || strcmp(token, "mov") == 0) {
         return &parse_arithmetic;
     }
 
@@ -472,8 +571,7 @@ static func_ptr parse_dpi(char *assembler_instruction) {
     || strcmp(token, "eon") == 0
     || strcmp(token, "orn") == 0
     || strcmp(token, "tst") == 0
-    || strcmp(token, "mvn") == 0
-    || strcmp(token, "mov") == 0) {
+    || strcmp(token, "mvn") == 0) {
         return &parse_logic;
     }
 
@@ -484,10 +582,22 @@ static func_ptr parse_dpi(char *assembler_instruction) {
         return &parse_wide_move;
     }
 
+    if (strcmp(token, "madd") == 0
+        || strcmp(token, "msub") == 0
+        || strcmp(token ,"mul") == 0
+        || strcmp(token, "mneg") == 0) {
+        return &parse_multiply;
+    }
+
     return NULL;
 }
 
 uint32_t assemble_DPI(char *assembler_instruction) {
     func_ptr parse_func = parse_dpi(assembler_instruction);
     return (parse_func)(assembler_instruction);
+}
+
+int main(void) {
+    char *inst = "mul\tx2, x1, x0";
+    printf("%x\n", assemble_DPI(inst));
 }
