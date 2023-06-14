@@ -6,6 +6,9 @@
 #include <ctype.h>
 #include <stdbool.h>
 
+#include "assembleDPI.h"
+#include "../BitUtils/custombit.h"
+
 
 #define ADD 0
 #define ADDS 1
@@ -29,19 +32,19 @@
 #define WIDE_MOVE_OPI 5
 
 typedef uint32_t (*func_ptr)(char *);
-//
-//void print_binary(uint32_t number) {
-//    // Iterate over each bit of the number
-//    for (int i = 31; i >= 0; i--) {
-//        // Right shift the number by 'i' bits and perform bitwise AND with 1
-//        uint32_t bit = (number >> i) & 1;
-//        printf("%x", bit);
-//        if (i % 4 == 0) {
-//            printf(" ");
-//        }
-//    }
-//    printf("\n");
-//}
+
+void print(uint32_t number) {
+    // Iterate over each bit of the number
+    for (int i = 31; i >= 0; i--) {
+        // Right shift the number by 'i' bits and perform bitwise AND with 1
+        uint32_t bit = (number >> i) & 1;
+        printf("%x", bit);
+        if (i % 5 == 0) {
+            printf(" ");
+        }
+    }
+    printf("\n");
+}
 
 static uint32_t parse_arithmetic(char *assembler_instruction) {
     // convert char* to char[] for tokenization
@@ -53,7 +56,6 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
     // defining variables
     bool alias_rd = false;
     bool alias_rn = false;
-    bool alias_mov = false;
     uint32_t rd;
     uint32_t rn;
     uint32_t sf;
@@ -87,43 +89,42 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
         opc = SUBS;
         rn = ZERO_REGISTER_ID;
         alias_rn = true;
-    } else if (strcmp(token, "mov") == 0) {
-        opc = SUBS;
-        alias_mov = true;
     }
 
     // begin tokenization
     // extracting rd
-    token = strtok(NULL, ", ");
+    if (!alias_rd) {
+        token = strtok(NULL, ", ");
+        assert(token != NULL);
+        // setting sf value
+        sf = token[0] == BIT_WIDTH_64;
 
-    // setting sf value
-    sf = token[0] == BIT_WIDTH_64;
-
-    if (isalpha(token[1])) {
-        rd = ZERO_REGISTER_ID;
-    } else {
-        if (!alias_rd) {
+        if (isalpha(token[1])) {
+            rd = ZERO_REGISTER_ID;
+        } else {
             rd = strtol(token + 1, NULL, 10);
         }
     }
 
     // extracting rn
-    token = strtok(NULL, ", ");
-    assert (token != NULL);
-    if (isalpha(token[1])) {
-        rn = ZERO_REGISTER_ID;
-    } else {
-        if (!alias_rn) {
+    if (!alias_rn) {
+        token = strtok(NULL, ", ");
+        assert(token != NULL);
+
+        sf = token[0] == BIT_WIDTH_64;
+
+        if (isalpha(token[1])) {
+            rn = ZERO_REGISTER_ID;
+        } else {
             rn = strtol(token + 1, NULL, 10);
-        }
-        if (alias_mov) {
-            rn = rd;
         }
     }
 
     // extracting operand
     token = strtok(NULL, " ");
+
     uint32_t assembled_instruction = sf;
+
 
     switch (token[0]) {
         case IMMEDIATE: {
@@ -286,24 +287,25 @@ static uint32_t parse_logic(char *assembler_instruction) {
     }
 
     // extracting Rd
-    token = strtok(NULL, ", ");
-    assert (token != NULL);
-    sf = token[0] == BIT_WIDTH_64;
-    if (isalpha(token[1])) {
-        rd = ZERO_REGISTER_ID;
-    } else {
-        if (!alias_rd) {
+    if (!alias_rd) {
+        token = strtok(NULL, ", ");
+        assert(token != NULL);
+        sf = token[0] == BIT_WIDTH_64;
+        if (isalpha(token[1])) {
+            rd = ZERO_REGISTER_ID;
+        } else {
             rd = strtol(token + 1, NULL, 10);
         }
     }
 
     // extracting Rn
-    token = strtok(NULL, ", ");
-    assert (token != NULL);
-    if (isalpha(token[1])) {
-        rn = ZERO_REGISTER_ID;
-    } else {
-        if (!alias_rn) {
+    if (!alias_rn) {
+        token = strtok(NULL, ", ");
+        assert(token != NULL);
+        sf = token[0] == BIT_WIDTH_64;
+        if (isalpha(token[1])) {
+            rn = ZERO_REGISTER_ID;
+        } else {
             rn = strtol(token + 1, NULL, 10);
         }
     }
@@ -392,6 +394,8 @@ static uint32_t parse_wide_move(char *assembler_instruction) {
         opc = MOVZ;
     } else if (strcmp(token, "movk") == 0) {
         opc = MOVK;
+    } else if (strcmp(token, "mov") == 0) {
+        opc = MOVZ;
     }
 
     // extracting Rd
@@ -501,13 +505,13 @@ static uint32_t parse_multiply(char *assembler_instruction) {
     if (isalpha(token[1])) {
         rm = ZERO_REGISTER_ID;
     } else {
-        rn = strtol(token + 1, NULL, 10);
+        rm = strtol(token + 1, NULL, 10);
     }
 
     // extracting Ra
     token = strtok(NULL, ", ");
-    assert(token != NULL);
     if (!alias_ra) {
+        assert(token != NULL);
         if (isalpha(token[1])) {
             ra = ZERO_REGISTER_ID;
         } else {
@@ -519,25 +523,25 @@ static uint32_t parse_multiply(char *assembler_instruction) {
     uint32_t assembled_instruction = sf;
 
     assembled_instruction <<= 2;
-    assembled_instruction /= opc;
+    assembled_instruction |= opc;
 
     assembled_instruction <<= 8;
-    assembled_instruction /= multiply_encoding_21_28;
+    assembled_instruction |= multiply_encoding_21_28;
 
     assembled_instruction <<= REGISTER_ADDRESS_SIZE;
-    assembled_instruction /= rm;
+    assembled_instruction |= rm;
 
     assembled_instruction <<= 1;
-    assembled_instruction /= x;
+    assembled_instruction |= x;
 
     assembled_instruction <<= REGISTER_ADDRESS_SIZE;
-    assembled_instruction /= ra;
+    assembled_instruction |= ra;
 
     assembled_instruction <<= REGISTER_ADDRESS_SIZE;
-    assembled_instruction /= rn;
+    assembled_instruction |= rn;
 
     assembled_instruction <<= REGISTER_ADDRESS_SIZE;
-    assembled_instruction /= rd;
+    assembled_instruction |= rd;
 
     return assembled_instruction;
 }
@@ -557,8 +561,7 @@ static func_ptr parse_dpi(char *assembler_instruction) {
     || strcmp(token, "cmp") == 0
     || strcmp(token, "cmn") == 0
     || strcmp(token, "neg") == 0
-    || strcmp(token, "negs") == 0
-    || strcmp(token, "mov") == 0) {
+    || strcmp(token, "negs") == 0) {
         return &parse_arithmetic;
     }
 
@@ -595,9 +598,4 @@ static func_ptr parse_dpi(char *assembler_instruction) {
 uint32_t assemble_DPI(char *assembler_instruction) {
     func_ptr parse_func = parse_dpi(assembler_instruction);
     return (parse_func)(assembler_instruction);
-}
-
-int main(void) {
-    char *inst = "mul\tx2, x1, x0";
-    printf("%x\n", assemble_DPI(inst));
 }

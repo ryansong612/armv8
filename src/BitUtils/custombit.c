@@ -40,18 +40,31 @@ int64_t extend_sign_bit(uint32_t num, int num_bits) {
 }
 
 // for debugging purposes
-    void print_binary(int64_t number) {
-        // Iterate over each bit of the number
-        for (int i = 63; i >= 0; i--) {
-            // Right shift the number by 'i' bits and perform bitwise AND with 1
-            int64_t bit = (number >> i) & 1;
-            printf("%lx", bit);
-            if (i % 4 == 0) {
-                printf(" ");
-            }
+void print_binary(int64_t number) {
+    // Iterate over each bit of the number
+    for (int i = 63; i >= 0; i--) {
+        // Right shift the number by 'i' bits and perform bitwise AND with 1
+        int64_t bit = (number >> i) & 1;
+        printf("%lx", bit);
+        if (i % 4 == 0) {
+            printf(" ");
         }
-        printf("\n");
     }
+    printf("\n");
+}
+
+void print_instruction(uint32_t number) {
+    // Iterate over each bit of the number
+    for (int i = 31; i >= 0; i--) {
+        // Right shift the number by 'i' bits and perform bitwise AND with 1
+        uint32_t bit = (number >> i) & 1;
+        printf("%x", bit);
+        if (i % 4 == 0) {
+            printf(" ");
+        }
+    }
+    printf("\n");
+}
 
 // Shrinks a number expressed in 32-bits to a number expressed in num_bits bits. This is the opposite of extend_sign_bit
 uint32_t shrink32(uint32_t num, int num_bits) {

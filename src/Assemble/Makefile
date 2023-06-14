@@ -13,7 +13,7 @@ assemble.o: dynmap.h assembleBranches.h assembleDPI.h assembleSingleDTI.h
 
 assembleBranches.o: assembleBranches.h
 
-assembleDPI.o: assembleDPI.h
+assembleDPI.o: assembleDPI.h ../BitUtils/custombit.o
 
 assembleSingleDTI.o: assembleSingleDTI.h dynmap.h
 
