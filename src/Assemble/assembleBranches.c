@@ -30,7 +30,7 @@ struct branch_IR {
 
 typedef struct branch_IR *branch_IR;
 
-branch_IR build_branch_IR(char *assembly_instruction) {
+static branch_IR build_branch_IR(char *assembly_instruction) {
     // Copies assembly instruction
     unsigned long n = strlen(assembly_instruction);
     char instruction_copy[n + 1];

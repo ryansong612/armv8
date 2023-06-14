@@ -43,7 +43,7 @@ typedef uint32_t (*func_ptr)(char *);
 //    printf("\n");
 //}
 
-uint32_t parse_arithmetic(char *assembler_instruction) {
+static uint32_t parse_arithmetic(char *assembler_instruction) {
     // convert char* to char[] for tokenization
     unsigned long n = strlen(assembler_instruction);
     char assembler_instruction_arr[n + 1];
@@ -222,7 +222,7 @@ uint32_t parse_arithmetic(char *assembler_instruction) {
     return assembled_instruction;
 }
 
-uint32_t parse_logic(char *assembler_instruction) {
+static uint32_t parse_logic(char *assembler_instruction) {
     // convert char* to char[] for tokenization
     unsigned long instruction_length = strlen(assembler_instruction);
     char assembler_instruction_arr[instruction_length + 1];
@@ -370,7 +370,7 @@ uint32_t parse_logic(char *assembler_instruction) {
     return assembled_instruction;
 }
 // movk x0, #0x1234, lsl #16
-uint32_t parse_wide_move(char *assembler_instruction) {
+static uint32_t parse_wide_move(char *assembler_instruction) {
     unsigned long instruction_length = strlen(assembler_instruction);
     char assembler_instruction_arr[instruction_length + 1];
     for (int i = 0; i <= instruction_length; i++) {
@@ -443,7 +443,7 @@ uint32_t parse_wide_move(char *assembler_instruction) {
     return assembled_instruction;
 }
 
-func_ptr parse_dpi(char *assembler_instruction) {
+static func_ptr parse_dpi(char *assembler_instruction) {
     unsigned long n = strlen(assembler_instruction);
     char assembler_instruction_arr[n + 1];
     for (int i = 0; i <= n; i++) {

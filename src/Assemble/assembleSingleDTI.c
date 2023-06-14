@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <regex.h>
 #include "dynmap.h"
+#include "../BitUtils/custombit.h"
 
 #define SF 30
 #define U 24
@@ -198,7 +199,7 @@ void unsigned_offset(singleDTI_IR struct_ptr, char *address) {
     }
 }
 
-uint32_t singleDTI_construct(singleDTI_IR struct_ptr) {
+static uint32_t singleDTI_construct(singleDTI_IR struct_ptr) {
     uint32_t output = 0b1011100000 << (32 - 10);
 
     // sf = 1 if target register is 64-bit
@@ -226,7 +227,7 @@ uint32_t singleDTI_construct(singleDTI_IR struct_ptr) {
 }
 
 
-void assemble_single_DTI(char *assembly_instruction) {
+uint32_t assemble_single_DTI(char *assembly_instruction) {
     // Converting char * into char[]
     unsigned long n = strlen(assembly_instruction);
     char assembly_instruction_arr[n + 1];
@@ -258,12 +259,12 @@ void assemble_single_DTI(char *assembly_instruction) {
 
     // Parse the address to determine address mode
     if (address[0] != '[') {
-        load_literal_IR instruction_struct;
+        struct load_literal_IR instruction_struct;
         load_literal_IR struct_ptr = &instruction_struct;
         load_literal(struct_ptr, target_register, address);
-        print_binary(load_literal_assemble(struct_ptr));
+        return(load_literal_assemble(struct_ptr));
     } else {
-        singleDTI_IR instruction_struct;
+        struct singleDTI_IR instruction_struct;
         singleDTI_IR struct_ptr = &instruction_struct;
 
         // Set the load flag
