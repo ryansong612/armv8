@@ -26,6 +26,7 @@ static void dynmap_rebuild(dynmap map) {
 // frees all memory allocated to create the dynmap
 void dynmap_free(dynmap map) {
     for (int i = 0; i < map->size; i++) {
+        free(map->entries[i]->key);
         free(map->entries[i]);
     }
     free(map->entries);
@@ -38,8 +39,10 @@ void dynmap_add(dynmap map, char* key, uint8_t value) {
     if (map->size >= map->cap) {
         dynmap_rebuild(map);
     }
-    struct map_entry new_entry = {key, value};
-    map->entries[map->size++] = &new_entry;
+    map_entry new_entry = malloc(sizeof(struct map_entry));
+    new_entry->key = strdup(key);
+    new_entry->value = value;
+    map->entries[map->size++] = new_entry;
 }
 
 uint32_t dynmap_get(dynmap map, char* key) {
