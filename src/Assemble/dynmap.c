@@ -51,5 +51,6 @@ uint32_t dynmap_get(dynmap map, char* key) {
             return map->entries[i]->value;
         }
     }
-    printf("Error: Key not found\n");
+    perror("Error: Key not found\n");
+    exit(EXIT_FAILURE);
 }

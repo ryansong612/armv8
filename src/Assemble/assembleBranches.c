@@ -35,9 +35,7 @@ static branch_IR build_branch_IR(char *assembly_instruction) {
     unsigned long n = strlen(assembly_instruction);
     char instruction_copy[n + 1];
 
-    for (int i = 0; i <= n; i++) {
-        instruction_copy[i] = assembly_instruction[i];
-    }
+    strcpy(instruction_copy, assembly_instruction);
 
     // Tokenize instruction
     char *first = strtok(instruction_copy, " ");
@@ -72,6 +70,7 @@ static branch_IR build_branch_IR(char *assembly_instruction) {
             }
         } else {
             // Second word is a label
+            second[strlen(second) - 1] = '\0';
             ir->arg = dynmap_get(symbol_table, second) - program_counter;
         }
     }

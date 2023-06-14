@@ -88,8 +88,8 @@ int main(int argc, char **argv) {
         // Check if the line is a label
         if (isalpha(line[0]) && line[strlen(line) - 2] == ':') { // len - 2 due to '\0'
             // add an entry to the table where key is label and value is address
-            line[strlen(line) - 1] = '\0';
-            dynmap_add(symbol_table, strdup(line), program_counter);
+            line[strlen(line) - 2] = '\0';
+            dynmap_add(symbol_table, strdup(line), program_counter + 4);
         }
         program_counter += 4;
     }
