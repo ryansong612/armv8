@@ -86,6 +86,9 @@ void load_literal(load_literal_IR struct_ptr, char* target_register, char* addre
         load_address = atoi(address + 1);
     } else {
         // It's a label
+        if (strchr(address, ' ') != NULL) {
+            address[strchr(address, ' ') - address] = '\0';
+        }
         load_address = dynmap_get(symbol_table, address);
     }
 

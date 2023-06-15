@@ -92,7 +92,7 @@ static branch_IR build_branch_IR(char *assembly_instruction) {
             ir->condition = LT;
         } else if (strcmp(third, "gt") == 0) {
             ir->condition = GT;
-        } else if (strcmp(third, "LE") == 0) {
+        } else if (strcmp(third, "le") == 0) {
             ir->condition = LE;
         } else {
             ir->condition = AL;

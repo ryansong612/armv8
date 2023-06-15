@@ -111,18 +111,18 @@ int main(int argc, char **argv) {
         line[strlen(line) - 1] = '\0';
         printf("%s\n", line);
 
-        // Skips empty lines         
-        if (*line == '\0') {
+        // Skips empty lines  
+        char *temp = line;
+        while (isspace(*temp)) temp++;   
+
+        if (*temp == '\0') {
             continue;
         }
 
         // Skips labels
-        if (strchr(line, ':') != NULL) {
+        if (strchr(temp, ':') != NULL) {
             continue;
         }
-
-        char *temp = line;
-        while (isspace(*temp)) temp++;
 
         // Check for directives
         char line_copy[strlen(temp) + 1];
