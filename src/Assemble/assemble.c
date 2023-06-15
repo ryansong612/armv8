@@ -93,13 +93,11 @@ int main(int argc, char **argv) {
         }
 
         // Check if the line is a label
-        if (isalpha(line[0]) && line[strlen(line) - 2] == ':') { // len - 2 due to '\0'
+        if (strchr(line, ':') != NULL) { // len - 2 due to '\0'
             // add an entry to the table where key is label and value is address
-            printf("Original line: %s\n", line);
-            line[strlen(line) - 2] = '\0';
-            printf("After 0: %s\n", line);
-            printf("PC: %i\n", program_counter);
+            line[strchr(line, ':') - line] = '\0';
             dynmap_add(symbol_table, line, program_counter);
+            continue;
         }
         program_counter += 4;
     }
@@ -119,13 +117,16 @@ int main(int argc, char **argv) {
         }
 
         // Skips labels
-        if (line[strlen(line) - 1] == ':') {
+        if (strchr(line, ':') != NULL) {
             continue;
         }
 
+        char *temp = line;
+        while (isspace(*temp)) temp++;
+
         // Check for directives
-        char line_copy[strlen(line) + 1];
-        strcpy(line_copy, line);
+        char line_copy[strlen(temp) + 1];
+        strcpy(line_copy, temp);
         char *first = strtok(line_copy, " ");
         if (strcmp(first, ".int") == 0) {
             char *directive = strtok(NULL, " ");
@@ -135,10 +136,9 @@ int main(int argc, char **argv) {
                 binary_instruction = strtol(directive, NULL, 10);
             }
         } else {
-            func_ptr parsing_function = get_function(line);
-            binary_instruction = (parsing_function)(line);
+            func_ptr parsing_function = get_function(temp);
+            binary_instruction = (parsing_function)(temp);
         }
-
         printf("%x\n", binary_instruction);
         print_binary(binary_instruction);
         fwrite(&binary_instruction, sizeof(uint32_t), 1, outfile); 

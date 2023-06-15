@@ -65,10 +65,10 @@ uint32_t convert_signed_to_unsigned(int32_t num) {
 uint32_t load_literal_assemble(load_literal_IR struct_ptr) {
     uint32_t output = 0b00011000 << (32 - 8);
     if (struct_ptr->sf) {
-        output += 1 << SF;
+        output |= 1LL << SF;
     }
-    output += struct_ptr->offset << XN;
-    output += struct_ptr->rt;
+    output |= struct_ptr->offset << XN;
+    output |= struct_ptr->rt;
     return output;
 }
 
@@ -90,7 +90,7 @@ void load_literal(load_literal_IR struct_ptr, char* target_register, char* addre
     }
 
     assert(abs(load_address - program_counter) < MB && load_address % 4 == 0);
-    struct_ptr->offset = convert_signed_to_unsigned((load_address - program_counter) / 4);
+    struct_ptr->offset = convert_signed_to_unsigned(shrink32((load_address - program_counter) / 4, 19));
 }
 
 // ------------------------ SINGLE DTI ----------------------------------------
@@ -112,7 +112,7 @@ void pre_index(singleDTI_IR struct_ptr, char *address) {
     } else {
         offset = strtol(tok + 1, NULL, 10);
     }
-    simm9 = convert_signed_to_unsigned(offset);
+    simm9 = convert_signed_to_unsigned(shrink32(offset, 9));
 
     struct_ptr->offset = (simm9 << 2) + (1 << 1) + 1;
 }
@@ -136,7 +136,7 @@ void post_index(singleDTI_IR struct_ptr, char *address) {
     } else {
         offset = strtol(tok + 1, NULL, 10);
     }
-    simm9 = convert_signed_to_unsigned(offset);
+    simm9 = convert_signed_to_unsigned(shrink32(offset, 9));
 
     struct_ptr->offset = (simm9 << 2) + 1;
 }
@@ -275,7 +275,6 @@ uint32_t assemble_single_DTI(char *assembly_instruction) {
         if (address[strlen(address) - 1] == '!') {
             printf("Pre\n");
             pre_index(struct_ptr, address);
-            print_struct(struct_ptr);
         } else if (address[strlen(address) - 1] != ']') {
             printf("post-index\n");
             post_index(struct_ptr, address);
@@ -284,17 +283,14 @@ uint32_t assemble_single_DTI(char *assembly_instruction) {
             if (strchr(address, ',') != NULL) {
                 printf("register\n");
                 register_offset(struct_ptr, address);
-                print_struct(struct_ptr);
             } else {
                 printf("Unsigned\n");
                 unsigned_offset(struct_ptr, address);
-                print_struct(struct_ptr);
             }
         } else if (strchr(address, '#') != NULL) {
             // Bug?
             printf("Unsigned\n");
             unsigned_offset(struct_ptr, address);
-            print_struct(struct_ptr);
         } else {
             exit(EXIT_FAILURE);
         }

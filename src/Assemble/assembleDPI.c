@@ -520,7 +520,7 @@ static uint32_t parse_multiply(char *assembler_instruction) {
         x = 0;
         alias_ra = true;
         ra = ZERO_REGISTER_ID;
-    } else if (strcmp(token, "meng") == 0) {
+    } else if (strcmp(token, "mneg") == 0) {
         x = 1;
         alias_ra = true;
         ra = ZERO_REGISTER_ID;
