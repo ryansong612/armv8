@@ -8,6 +8,7 @@
 #include "assembleBranches.h"
 #include "assembleDPI.h"
 #include "assembleSingleDTI.h"
+#include "../BitUtils/custombit.h"
 
 #define MAX_LINE_LENGTH 256
 #define NOP 3573751839; // No operation instruction
@@ -55,7 +56,7 @@ func_ptr get_function(char* assembly_instruction) {
         return &assemble_branches;
     }
     // Single DTI
-    if (assembly_instruction[0] == 'l' || assembly_instruction[0] == 's') {
+    if (assembly_instruction[0] == 'l' || (assembly_instruction[0] == 's' && assembly_instruction[1] == 't')) {
         return &assemble_single_DTI;
     }
     // Rest is DPI
@@ -67,7 +68,7 @@ dynmap symbol_table;
 
 int main(int argc, char **argv) {
     char *line = malloc(sizeof(char) * MAX_LINE_LENGTH + 2);
-    uint32_t *binary_instruction = malloc(sizeof(uint32_t));
+    uint32_t binary_instruction;
     // dynarray output = dynarray_create(DYNARRAY_LIMIT);
 
     FILE *infile = fopen(argv[1], "r");
@@ -89,8 +90,11 @@ int main(int argc, char **argv) {
         // Check if the line is a label
         if (isalpha(line[0]) && line[strlen(line) - 2] == ':') { // len - 2 due to '\0'
             // add an entry to the table where key is label and value is address
+            printf("Original line: %s\n", line);
             line[strlen(line) - 2] = '\0';
-            dynmap_add(symbol_table, strdup(line), program_counter + 4);
+            printf("After 0: %s\n", line);
+            printf("PC: %i\n", program_counter);
+            dynmap_add(symbol_table, line, program_counter);
         }
         program_counter += 4;
     }
@@ -104,20 +108,40 @@ int main(int argc, char **argv) {
         line[strlen(line) - 1] = '\0';
         printf("%s\n", line);
 
+        // Skips empty lines         
         if (*line == '\0') {
-            break;
+            continue;
         }
 
-        func_ptr parsing_function = get_function(line);
-        *binary_instruction = (parsing_function)(line);
-        printf("%x\n", *binary_instruction);
-        fwrite(binary_instruction, sizeof(uint32_t), 1, outfile); 
+        // Skips labels
+        if (line[strlen(line) - 1] == ':') {
+            continue;
+        }
+
+        // Check for directives
+        char line_copy[strlen(line) + 1];
+        strcpy(line_copy, line);
+        char *first = strtok(line_copy, " ");
+        if (strcmp(first, ".int") == 0) {
+            char *directive = strtok(NULL, " ");
+            if (directive[0] == '0') { // 0x..
+                binary_instruction = strtol(directive, NULL, 16);
+            } else {
+                binary_instruction = strtol(directive, NULL, 10);
+            }
+        } else {
+            func_ptr parsing_function = get_function(line);
+            binary_instruction = (parsing_function)(line);
+        }
+
+        printf("%x\n", binary_instruction);
+        print_binary(binary_instruction);
+        fwrite(&binary_instruction, sizeof(uint32_t), 1, outfile); 
         program_counter += 4;
     }
 
     fclose(infile);
     fclose(outfile);
     free(line);
-    free(binary_instruction);
     return EXIT_SUCCESS;
 }

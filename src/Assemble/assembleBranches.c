@@ -2,6 +2,7 @@
 #include "dynmap.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <stdint.h>
 #include "../BitUtils/custombit.h"
@@ -70,14 +71,17 @@ static branch_IR build_branch_IR(char *assembly_instruction) {
             }
         } else {
             // Second word is a label
-            second[strlen(second) - 1] = '\0';
+            printf("Branches get key: %s\n", second);
+            printf("int: %i\n", dynmap_get(symbol_table, second) - program_counter);
             ir->arg = dynmap_get(symbol_table, second) - program_counter;
         }
     }
 
     // Determines condition
     if (ir->state == CONDITIONAL) {
-        char *third = strtok(NULL, " ");
+        char *third = first + 2;
+
+        printf("%s\n", third);
         if (strcmp(third, "eq") == 0) {
             ir->condition = EQ;
         } else if (strcmp(third, "ne") == 0) {

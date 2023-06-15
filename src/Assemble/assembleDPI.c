@@ -130,7 +130,12 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
         case IMMEDIATE: {
             // '#' flags immediate
             // extracting imm12
-            uint32_t imm12 = strtol(token + 1, NULL, 16);
+            uint32_t imm12;
+            if (token[1] == '0') { //hex
+               imm12 = strtol(token + 1, NULL, 16);
+            } else { // decimal
+                imm12 = strtol(token + 1, NULL, 10);
+            }
 
             uint32_t sh;
 
@@ -193,22 +198,28 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
 
             // extracting shift type
             token = strtok(NULL, " ");
-            assert (token != NULL);
+            uint32_t shift_imm;
             uint32_t shift_type;
-            if (token[0] == 'l' && token[1] == 's') {
-                shift_type = token[2] == 'r';
-            } else {
-                if (token[0] == 'r') {
-                    shift_type = ROR;
+            if (token != NULL) {
+                if (token[0] == 'l' && token[1] == 's') {
+                    shift_type = token[2] == 'r';
                 } else {
-                    shift_type = ASR;
+                    if (token[0] == 'r') {
+                        shift_type = ROR;
+                    } else {
+                        shift_type = ASR;
+                    }
                 }
-            }
 
-            // extracting shift operand
-            token = strtok(NULL, " ");
-            assert (token != NULL);
-            uint32_t shift_imm = strtol(token + 1, NULL, 16);
+                // extracting shift operand
+                token = strtok(NULL, " ");
+                assert (token != NULL);
+                shift_imm = strtol(token + 1, NULL, 16);
+            } else {
+                shift_imm = 0;
+                shift_type = 0;
+            }
+            
 
             // assembling bits
             assembled_instruction <<= 2;
@@ -434,7 +445,12 @@ static uint32_t parse_wide_move(char *assembler_instruction) {
     // extracting imm16
     token = strtok(NULL, ", ");
     assert (token != NULL);
-    imm16 = strtol(token + 1, NULL, 16);
+    if (token[1] == '0') { // #0x..
+        imm16 = strtol(token + 1, NULL, 16);
+    } else {
+        imm16 = strtol(token + 1, NULL, 10);
+    }
+
 
     // determining and extracting shifts
     token = strtok(NULL, ", ");
@@ -444,7 +460,14 @@ static uint32_t parse_wide_move(char *assembler_instruction) {
     } else {
         // now token should be lsl
         token = strtok(NULL, " ");
-        hw = strtol(token + 1, NULL, 10);
+        // Must either be 0 or 16 so hw = 1
+        uint32_t shift_amount;
+        if (token[1] == '0') { // #0x..
+            shift_amount = strtol(token + 1, NULL, 16);
+        } else {
+            shift_amount = strtol(token + 1, NULL, 10);
+        }
+        hw = shift_amount / 16;
     }
 
     uint32_t assembled_instruction = sf;
@@ -619,6 +642,7 @@ static func_ptr parse_dpi(char *assembler_instruction) {
 }
 
 uint32_t assemble_DPI(char *assembler_instruction) {
+    printf("\n\n\n");
     func_ptr parse_func = parse_dpi(assembler_instruction);
     return (parse_func)(assembler_instruction);
 }

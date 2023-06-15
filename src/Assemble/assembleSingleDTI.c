@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <regex.h>
 #include "dynmap.h"
+#include <ctype.h>
 #include "../BitUtils/custombit.h"
 
 #define SF 30
@@ -104,7 +105,14 @@ void pre_index(singleDTI_IR struct_ptr, char *address) {
     char *tok = strtok(address, "[,]");
     struct_ptr->xn = atoi(tok + 1);
     tok = strtok(NULL, ",] ");
-    simm9 = convert_signed_to_unsigned(atoi(tok + 1));
+
+    int32_t offset;
+    if (tok[1] == '0') { // #0x..
+        offset = strtol(tok + 1, NULL, 16);
+    } else {
+        offset = strtol(tok + 1, NULL, 10);
+    }
+    simm9 = convert_signed_to_unsigned(offset);
 
     struct_ptr->offset = (simm9 << 2) + (1 << 1) + 1;
 }
@@ -121,7 +129,14 @@ void post_index(singleDTI_IR struct_ptr, char *address) {
 
     tok = strtok(NULL, ", ");
     printf("%s", tok);
-    simm9 = convert_signed_to_unsigned(atoi(tok + 1));
+
+    int32_t offset;
+    if (tok[1] == '0') { // #0x..
+        offset = strtol(tok + 1, NULL, 16);
+    } else {
+        offset = strtol(tok + 1, NULL, 10);
+    }
+    simm9 = convert_signed_to_unsigned(offset);
 
     struct_ptr->offset = (simm9 << 2) + 1;
 }
@@ -155,7 +170,12 @@ void unsigned_offset(singleDTI_IR struct_ptr, char *address) {
 
     // offset
     if ((tok = strtok(NULL, ",] "))) {
-        uint32_t imm12 = atoi(tok + 1);
+        uint32_t imm12;
+        if (tok[1] == '0') { // #0x..
+            imm12 = strtol(tok + 1, NULL, 16);
+        } else {
+            imm12 = strtol(tok + 1, NULL, 10);
+        }
         printf("%i\n", imm12);
         if (struct_ptr->sf) {
             struct_ptr->offset = convert_signed_to_unsigned(imm12 / 8);
@@ -198,9 +218,7 @@ uint32_t assemble_single_DTI(char *assembly_instruction) {
     // Converting char * into char[]
     unsigned long n = strlen(assembly_instruction);
     char assembly_instruction_arr[n + 1];
-    for (int i = 0; i <= n; i++) {
-        assembly_instruction_arr[i] = assembly_instruction[i];
-    }
+    strcpy(assembly_instruction_arr, assembly_instruction);
 
     // Parse instruction into opcode, register and <address>
     int load = 0;
@@ -214,12 +232,13 @@ uint32_t assemble_single_DTI(char *assembly_instruction) {
             } else {
                 load = 0;
             }
-            tok = strtok(NULL, " ");
+            tok = strtok(NULL, ",");
         } else if (i == 1) {
-            tok[strlen(tok) - 1] = '\0';
+            while (isspace(*tok)) tok++;
             memcpy(target_register, tok, strlen(tok)+1);
             tok = strtok(NULL, "");
         } else {
+            while (isspace(*tok)) tok++;
             memcpy(address, tok, strlen(tok)+1);
         }
     }
