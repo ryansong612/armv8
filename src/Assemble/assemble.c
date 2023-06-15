@@ -86,7 +86,12 @@ int main(int argc, char **argv) {
     // First pass : build the symbol table
     symbol_table = dynmap_create();
     program_counter = 0;
-    while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
+    while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {   
+        // Skips empty lines         
+        if (*line == '\n') {
+            continue;
+        }
+
         // Check if the line is a label
         if (isalpha(line[0]) && line[strlen(line) - 2] == ':') { // len - 2 due to '\0'
             // add an entry to the table where key is label and value is address
