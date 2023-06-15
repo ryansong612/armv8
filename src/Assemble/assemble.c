@@ -56,7 +56,7 @@ func_ptr get_function(char* assembly_instruction) {
         return &assemble_branches;
     }
     // Single DTI
-    if (assembly_instruction[0] == 'l' || (assembly_instruction[0] == 'l' && assembly_instruction[1] == 'd')) {
+    if (assembly_instruction[0] == 'l' || assembly_instruction[0] == 's') {
         return &assemble_single_DTI;
     }
     // Rest is DPI
@@ -67,19 +67,21 @@ uint32_t program_counter;
 dynmap symbol_table;
 
 int main(int argc, char **argv) {
-    FILE *infile;
-    FILE *outfile;
-    char line[MAX_LINE_LENGTH + 2];
+    char *line = malloc(sizeof(char) * MAX_LINE_LENGTH + 2);
+    uint32_t *binary_instruction = malloc(sizeof(uint32_t));
     // dynarray output = dynarray_create(DYNARRAY_LIMIT);
 
-    infile = fopen(argv[1], "r");
-    outfile = fopen(argv[2], "wb");
-
+    FILE *infile = fopen(argv[1], "r");
     if (infile == NULL) {
         perror("File does not exist.\n");
         exit(EXIT_FAILURE);
     }
 
+    FILE *outfile = fopen(argv[2], "wb");
+    if (outfile == NULL) {
+        perror("File does not exist.\n");
+        exit(EXIT_FAILURE);
+    }
 
     // First pass : build the symbol table
     symbol_table = dynmap_create();
@@ -94,21 +96,31 @@ int main(int argc, char **argv) {
         program_counter += 4;
     }
 
-    fclose(infile);
-    infile = fopen(argv[1], "r");
+    // fclose(infile);
+    // infile = fopen(argv[1], "r");
+    rewind(infile);
 
     program_counter = 0;
     // Second pass: assemble instructions
     while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
         // Determines which parsing function to be used: could be a NOP function, directive, DPI, Branch or Single DTI
+        line[strlen(line) - 1] = '\0';
+        printf("%s\n", line);
+
+        if (*line == '\0') {
+            break;
+        }
+
         func_ptr parsing_function = get_function(line);
-        uint32_t binary_instruction = parsing_function(line);
-        printf("%x\n", binary_instruction);
-        fwrite(&binary_instruction, sizeof(binary_instruction), 1, outfile); // I think it's like that not sure though
+        *binary_instruction = (parsing_function)(line);
+        printf("%x\n", *binary_instruction);
+        fprintf(outfile, "%x\n", *binary_instruction); 
         program_counter += 4;
     }
 
     fclose(infile);
     fclose(outfile);
+    free(line);
+    free(binary_instruction);
     return EXIT_SUCCESS;
 }

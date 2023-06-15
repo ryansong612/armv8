@@ -14,61 +14,27 @@
 #define XN 5
 #define MB 1000000
 
-//regex_t unsigned_regex;
-//regex_t pre_index_regex;
-//regex_t post_index_regex;
-//regex_t register_regex;
-
 extern dynmap symbol_table;
 
+// Defining structs for the two types of instructions
 struct singleDTI_IR {
-    int load;
-    int sf;
-    int unsigned_offset_flag;
-    uint32_t offset;
-    uint32_t xn;
+    int load; // 1 if instruction is load and 0 if instruction is store
+    int sf; // 1 if target register is 64-bit and 0 if target register is 32-bit
+    int unsigned_offset_flag; // 1 if the instruction is unsigned immediate
+    uint32_t offset; // offset depending on the instruction
+    uint32_t xn; 
     uint32_t rt;
 };
-
 typedef struct singleDTI_IR *singleDTI_IR;
 
 struct load_literal_IR {
-    int sf;
-    uint32_t rt;
-    uint32_t offset;
+    int sf; // 1 if target register is 64-bit and 0 if target register is 32-bit
+    uint32_t offset; // offset depending on the instruction
+    uint32_t rt; 
 };
-
 typedef struct load_literal_IR *load_literal_IR;
 
 extern uint32_t program_counter;
-
-//void initialize_regex() {
-//    int return_value;
-//
-//    return_value = regcomp(&unsigned_regex, "\[x[0-3][0-9]?(, #[[0-9]*)?]", REG_EXTENDED);
-//    if (return_value) {
-//        printf("Cannot compile unsigned regex.\n");
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    return_value = regcomp(&pre_index_regex, "\[x[0-3][0-9]?, #[0-9]*]!", REG_EXTENDED);
-//    if (return_value) {
-//        printf("Cannot compile pre-index regex.\n");
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    return_value = regcomp(&post_index_regex, "\[x[0-3][0-9]?], #[0-9]*", REG_EXTENDED);
-//    if (return_value) {
-//        printf("Cannot compile post-index regex.\n");
-//        exit(EXIT_FAILURE);
-//    }
-//
-//    return_value = regcomp(&register_regex, "\[x[0-3][0-9]?, x[0-3][0-9]?(, lsl #[0-9]*)?]", REG_EXTENDED);
-//    if (return_value) {
-//        printf("Cannot compile register regex.\n");
-//        exit(EXIT_FAILURE);
-//    }
-//}
 
 void print_struct(singleDTI_IR struct_ptr) {
     // Iterate over each bit of the number
@@ -81,7 +47,10 @@ void print_struct(singleDTI_IR struct_ptr) {
     printf("target register: %i\n", struct_ptr->rt);
 }
 
-
+/* 
+    A helper function extracting all bits of a signed integer and turns it into
+    an unsigned integer.
+*/
 uint32_t convert_signed_to_unsigned(int32_t num) {
     uint32_t output = 0;
     for (int i = 31; i >= 0; i--) {
@@ -171,7 +140,7 @@ void register_offset(singleDTI_IR struct_ptr, char *address) {
     printf("%s\n", tok);
     uint32_t xm = atoi(tok + 1);
 
-    struct_ptr->offset = 0b10000011010 + (xm << 6);
+    struct_ptr->offset = 0b100000011010 + (xm << 6);
 }
 
 void unsigned_offset(singleDTI_IR struct_ptr, char *address) {
@@ -221,8 +190,6 @@ static uint32_t singleDTI_construct(singleDTI_IR struct_ptr) {
     output += struct_ptr->xn << XN;
     output += struct_ptr->rt;
 
-    print_binary(output);
-
     return output;
 }
 
@@ -257,15 +224,15 @@ uint32_t assemble_single_DTI(char *assembly_instruction) {
         }
     }
 
+    uint32_t output;
     // Parse the address to determine address mode
     if (address[0] != '[') {
-        struct load_literal_IR instruction_struct;
-        load_literal_IR struct_ptr = &instruction_struct;
+        load_literal_IR struct_ptr = malloc(sizeof(struct load_literal_IR));
         load_literal(struct_ptr, target_register, address);
-        return(load_literal_assemble(struct_ptr));
+        output = load_literal_assemble(struct_ptr);
+        free(struct_ptr);
     } else {
-        struct singleDTI_IR instruction_struct;
-        singleDTI_IR struct_ptr = &instruction_struct;
+        singleDTI_IR struct_ptr = malloc(sizeof(struct singleDTI_IR));
 
         // Set the load flag
         if (load) {
@@ -291,17 +258,17 @@ uint32_t assemble_single_DTI(char *assembly_instruction) {
             pre_index(struct_ptr, address);
             print_struct(struct_ptr);
         } else if (address[strlen(address) - 1] != ']') {
-            printf("register\n");
-            register_offset(struct_ptr, address);
+            printf("post-index\n");
+            post_index(struct_ptr, address);
             print_struct(struct_ptr);
         } else if (strchr(address, '#') == NULL) {
-            if (strchr(address, ',') == NULL) {
+            if (strchr(address, ',') != NULL) {
                 printf("register\n");
-                unsigned_offset(struct_ptr, address);
+                register_offset(struct_ptr, address);
                 print_struct(struct_ptr);
             } else {
                 printf("Unsigned\n");
-                register_offset(struct_ptr, address);
+                unsigned_offset(struct_ptr, address);
                 print_struct(struct_ptr);
             }
         } else if (strchr(address, '#') != NULL) {
@@ -312,6 +279,10 @@ uint32_t assemble_single_DTI(char *assembly_instruction) {
         } else {
             exit(EXIT_FAILURE);
         }
-        return singleDTI_construct(struct_ptr);
+        output = singleDTI_construct(struct_ptr);
+        free(struct_ptr);
     }
+    free(target_register);
+    free(address);
+    return output;
 }

@@ -321,16 +321,20 @@ static uint32_t parse_logic(char *assembler_instruction) {
 
     // extracting shift type
     token = strtok(NULL, " ");
-    assert (token != NULL);
-    if (token[0] == 'l') {
-        // shift is 1 if lsr, 0 if lsl
-        shift = token[2] == 'r';
-    } else {
-        if (token[0] == 'r') {
-            shift = ROR;
+    if (token != NULL) {
+        if (token[0] == 'l') {
+            // shift is 1 if lsr, 0 if lsl
+            shift = token[2] == 'r';
         } else {
-            shift = ASR;
+            if (token[0] == 'r') {
+                shift = ROR;
+            } else {
+                shift = ASR;
+            }
         }
+    } else {
+        shift = 0;
+        imm6 = 0;
     }
 
     opr <<= 2;
@@ -340,8 +344,9 @@ static uint32_t parse_logic(char *assembler_instruction) {
 
 
     token = strtok(NULL, " ");
-    assert (token != NULL);
-    imm6 = strtol(token + 1, NULL, 16);
+    if (token != NULL) {
+        imm6 = strtol(token + 1, NULL, 16);
+    }
 
 
     uint32_t assembled_instruction = sf;
