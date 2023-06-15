@@ -95,8 +95,6 @@ int main(int argc, char **argv) {
         program_counter += 4;
     }
 
-    // fclose(infile);
-    // infile = fopen(argv[1], "r");
     rewind(infile);
 
     program_counter = 0;
@@ -113,7 +111,7 @@ int main(int argc, char **argv) {
         func_ptr parsing_function = get_function(line);
         *binary_instruction = (parsing_function)(line);
         printf("%x\n", *binary_instruction);
-        fprintf(outfile, "%x\n", *binary_instruction); 
+        fwrite(binary_instruction, sizeof(uint32_t), 1, outfile); 
         program_counter += 4;
     }
 
