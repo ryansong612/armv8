@@ -165,6 +165,24 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
 
             assembled_instruction <<= REGISTER_ADDRESS_SIZE;
             assembled_instruction |= rd;
+
+
+            printf("sf: ");
+            print(sf);
+            printf("opc: ");
+            print(opc);
+            printf("arithmetic?: ");
+            print(IMMEDIATE_BIT_FLAG);
+            printf("opi: ");
+            print(opi);
+            printf("sh: ");
+            print(sh);
+            printf("imm12: ");
+            print(imm12);
+            printf("rn: ");
+            print(rn);
+            printf("rd: ");
+            print(rd);
             break;
         }
         case BIT_WIDTH_64:
