@@ -23,14 +23,20 @@ extern uint32_t program_counter;
 
 typedef enum {UNCONDITIONAL, REGISTER, CONDITIONAL} branch_state;
 
+/*
+Internal representation of a branch instruction. State can be in the form of UNCONDITIONAL, REGISTER or CONDITIONAL. Condition field only applies if the branch_state is CONDITIONAL. arg will represent simm26 (offset) for UNCONDITIONAL, xn (register) for REGISTER and simm19 (offset) for CONDITIONAL.
+*/
 struct branch_IR {
     branch_state state;
-    int32_t arg; // Second argument, could be either a register or an offset
+    int32_t arg;
     int32_t condition;
 };
 
 typedef struct branch_IR *branch_IR;
 
+/*
+Builds the internal representation of the branch instruction given the instruction string.
+*/
 static branch_IR build_branch_IR(char *assembly_instruction) {
     // Copies assembly instruction
     unsigned long n = strlen(assembly_instruction);
@@ -101,6 +107,9 @@ static branch_IR build_branch_IR(char *assembly_instruction) {
     return ir;
 }
 
+/*
+Assembles the instruction from the internal representation.
+*/
 uint32_t assemble_branches(char *assembly_instruction) {
     branch_IR ir = build_branch_IR(assembly_instruction);
     switch (ir->state) {
