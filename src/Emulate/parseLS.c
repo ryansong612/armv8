@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "emulate.h"
-#include "custombit.h"
+#include "../BitUtils/custombit.h"
 #include "readnwrite.h"
 #include "dpi-immediate.h"
 #include "parseLS.h"

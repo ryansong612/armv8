@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "custombit.h"
+#include "../BitUtils/custombit.h"
 #include "emulate.h"
 #include "readnwrite.h"
 #include "dpi-register.h"

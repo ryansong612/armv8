@@ -22,17 +22,17 @@ int64_t get_bits64(int64_t num, int start, int end) {
     return (num & mask) >> start;
 }
 
-// extends a numBits-bit number to a 64-bit number, preserving the sign
-int64_t extend_sign_bit(uint32_t num, int numBits) {
+// extends a num_bits-bit number to a 64-bit number, preserving the sign
+int64_t extend_sign_bit(uint32_t num, int num_bits) {
     int32_t signed_num = num;
     // If sign bit is zero, just cast normally
-    if (get_bit_register32(signed_num, numBits - 1) == 0) {
+    if (get_bit_register32(signed_num, num_bits - 1) == 0) {
         return num;
     }
     // sign bit is 1
     int64_t extended = num;
-    int64_t mask = 1LL << numBits;
-    for (int i = numBits; i < 64; i++) {
+    int64_t mask = 1LL << num_bits;
+    for (int i = num_bits; i < 64; i++) {
         extended = extended | mask;
         mask <<= 1LL;
     }
@@ -51,4 +51,23 @@ void print_binary(int64_t number) {
         }
     }
     printf("\n");
+}
+
+void print_instruction(uint32_t number) {
+    // Iterate over each bit of the number
+    for (int i = 31; i >= 0; i--) {
+        // Right shift the number by 'i' bits and perform bitwise AND with 1
+        uint32_t bit = (number >> i) & 1;
+        printf("%x", bit);
+        if (i % 4 == 0) {
+            printf(" ");
+        }
+    }
+    printf("\n");
+}
+
+// Shrinks a number expressed in 32-bits to a number expressed in num_bits bits. This is the opposite of extend_sign_bit
+uint32_t shrink32(uint32_t num, int num_bits) {
+    uint32_t mask = (1 << num_bits) - 1;
+    return num & mask;
 }
