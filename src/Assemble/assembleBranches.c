@@ -77,8 +77,6 @@ static branch_IR build_branch_IR(char *assembly_instruction) {
             }
         } else {
             // Second word is a label
-            printf("Branches get key: %s\n", second);
-            printf("int: %i\n", dynmap_get(symbol_table, second) - program_counter);
             ir->arg = dynmap_get(symbol_table, second) - program_counter;
         }
     }
@@ -86,8 +84,6 @@ static branch_IR build_branch_IR(char *assembly_instruction) {
     // Determines condition
     if (ir->state == CONDITIONAL) {
         char *third = first + 2;
-
-        printf("%s\n", third);
         if (strcmp(third, "eq") == 0) {
             ir->condition = EQ;
         } else if (strcmp(third, "ne") == 0) {
