@@ -10,6 +10,7 @@
 #include "../BitUtils/custombit.h"
 
 
+// Defining Constants
 #define ADD 0
 #define ADDS 1
 #define SUB 2
@@ -33,6 +34,11 @@
 
 typedef uint32_t (*func_ptr)(char *);
 
+/*
+ * parse_arithmetic takes a string of a line of assembly code with \n stripped off
+ * and returns the unsigned 32-bit representation of the instruction that indicates some data to be
+ * processed arithmetically
+ */
 static uint32_t parse_arithmetic(char *assembler_instruction) {
     // convert char* to char[] for tokenization
     unsigned long n = strlen(assembler_instruction);
@@ -232,6 +238,11 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
     return assembled_instruction;
 }
 
+/*
+ * parse_logic takes a string of a line of assembly code with \n stripped off
+ * and returns the unsigned 32-bit representation of the instruction that indicates some data to be
+ * processed logically with shifts
+ */
 static uint32_t parse_logic(char *assembler_instruction) {
     // convert char* to char[] for tokenization
     unsigned long instruction_length = strlen(assembler_instruction);
@@ -391,6 +402,11 @@ static uint32_t parse_logic(char *assembler_instruction) {
     return assembled_instruction;
 }
 
+/*
+ * parse_wide_move takes a string of a line of assembly code with \n stripped off
+ * and returns the unsigned 32-bit representation of the instruction that indicates some data to be
+ * processed with a wide move action
+ */
 static uint32_t parse_wide_move(char *assembler_instruction) {
     unsigned long instruction_length = strlen(assembler_instruction);
     char assembler_instruction_arr[instruction_length + 1];
@@ -475,6 +491,11 @@ static uint32_t parse_wide_move(char *assembler_instruction) {
     return assembled_instruction;
 }
 
+/*
+ * parse_multiply takes a string of a line of assembly code with \n stripped off
+ * and returns the unsigned 32-bit representation of the instruction that indicates some data to be
+ * processed in a multiplicative manner
+ */
 static uint32_t parse_multiply(char *assembler_instruction) {
     unsigned long instruction_length = strlen(assembler_instruction);
     char assembler_instruction_arr[instruction_length + 1];
@@ -574,6 +595,10 @@ static uint32_t parse_multiply(char *assembler_instruction) {
     return assembled_instruction;
 }
 
+/*
+ * parse_dpi takes a string of a line of assembly code with \n stripped off
+ * and returns the function pointer towards the designated static parser for the data processing instructions
+ */
 static func_ptr parse_dpi(char *assembler_instruction) {
     unsigned long n = strlen(assembler_instruction);
     char assembler_instruction_arr[n + 1];
@@ -623,8 +648,13 @@ static func_ptr parse_dpi(char *assembler_instruction) {
     return NULL;
 }
 
+/*
+ * assemble_DPI takes a string of a line of assembly code with \n stripped off
+ * and returns the 32-bit instruction required
+ *
+ * This will be the function that will be used in assemble.c
+ */
 uint32_t assemble_DPI(char *assembler_instruction) {
-    printf("\n\n\n");
     func_ptr parse_func = parse_dpi(assembler_instruction);
     return (parse_func)(assembler_instruction);
 }
