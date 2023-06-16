@@ -36,5 +36,6 @@ assemble
 test_cases
 
 .idea
+*.DS_Store*
 
 *.bin
