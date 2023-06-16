@@ -214,7 +214,12 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
                 // extracting shift operand
                 token = strtok(NULL, " ");
                 assert (token != NULL);
-                shift_imm = strtol(token + 1, NULL, 16);
+                if (token[1] == '0') {
+                    // hex
+                    shift_imm = strtol(token + 1, NULL, 16);
+                } else {
+                    shift_imm = strtol(token + 1, NULL, 10);
+                }
             } else {
                 shift_imm = 0;
                 shift_type = 0;
@@ -374,7 +379,11 @@ static uint32_t parse_logic(char *assembler_instruction) {
 
     token = strtok(NULL, " ");
     if (token != NULL) {
-        imm6 = strtol(token + 1, NULL, 16);
+        if (token[1] == '0') {
+            imm6 = strtol(token + 1, NULL, 16);
+        } else {
+            imm6 = strtol(token + 1, NULL, 10);
+        }
     }
 
 
