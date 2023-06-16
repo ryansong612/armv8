@@ -33,19 +33,6 @@
 
 typedef uint32_t (*func_ptr)(char *);
 
-void print(uint32_t number) {
-    // Iterate over each bit of the number
-    for (int i = 31; i >= 0; i--) {
-        // Right shift the number by 'i' bits and perform bitwise AND with 1
-        uint32_t bit = (number >> i) & 1;
-        printf("%x", bit);
-        if (i % 5 == 0) {
-            printf(" ");
-        }
-    }
-    printf("\n");
-}
-
 static uint32_t parse_arithmetic(char *assembler_instruction) {
     // convert char* to char[] for tokenization
     unsigned long n = strlen(assembler_instruction);
@@ -171,23 +158,6 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
             assembled_instruction <<= REGISTER_ADDRESS_SIZE;
             assembled_instruction |= rd;
 
-
-            printf("sf: ");
-            print(sf);
-            printf("opc: ");
-            print(opc);
-            printf("arithmetic?: ");
-            print(IMMEDIATE_BIT_FLAG);
-            printf("opi: ");
-            print(opi);
-            printf("sh: ");
-            print(sh);
-            printf("imm12: ");
-            print(imm12);
-            printf("rn: ");
-            print(rn);
-            printf("rd: ");
-            print(rd);
             break;
         }
         case BIT_WIDTH_64:
@@ -218,13 +188,13 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
                     // hex
                     shift_imm = strtol(token + 1, NULL, 16);
                 } else {
+                    // decimal
                     shift_imm = strtol(token + 1, NULL, 10);
                 }
             } else {
                 shift_imm = 0;
                 shift_type = 0;
             }
-            
 
             // assembling bits
             assembled_instruction <<= 2;
@@ -316,6 +286,11 @@ static uint32_t parse_logic(char *assembler_instruction) {
     } else if (strcmp(token, "mvn") == 0) {
         opc = 1;
         n = 1;
+        rn = ZERO_REGISTER_ID;
+        alias_rn = true;
+    } else if (strcmp(token, "mov") == 0) {
+        opc = 1;
+        n = 0;
         rn = ZERO_REGISTER_ID;
         alias_rn = true;
     }
@@ -415,7 +390,7 @@ static uint32_t parse_logic(char *assembler_instruction) {
 
     return assembled_instruction;
 }
-// movk x0, #0x1234, lsl #16
+
 static uint32_t parse_wide_move(char *assembler_instruction) {
     unsigned long instruction_length = strlen(assembler_instruction);
     char assembler_instruction_arr[instruction_length + 1];
@@ -437,8 +412,6 @@ static uint32_t parse_wide_move(char *assembler_instruction) {
         opc = MOVZ;
     } else if (strcmp(token, "movk") == 0) {
         opc = MOVK;
-    } else if (strcmp(token, "mov") == 0) {
-        opc = MOVZ;
     }
 
     // extracting Rd
@@ -629,12 +602,12 @@ static func_ptr parse_dpi(char *assembler_instruction) {
     || strcmp(token, "eon") == 0
     || strcmp(token, "orn") == 0
     || strcmp(token, "tst") == 0
-    || strcmp(token, "mvn") == 0) {
+    || strcmp(token, "mvn") == 0
+    || strcmp(token, "mov") == 0) {
         return &parse_logic;
     }
 
-    if (strcmp(token, "mov") == 0
-    || strcmp(token, "movn") == 0
+    if (strcmp(token, "movn") == 0
     || strcmp(token ,"movk") == 0
     || strcmp(token, "movz") == 0) {
         return &parse_wide_move;
