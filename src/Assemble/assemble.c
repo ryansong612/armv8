@@ -23,20 +23,17 @@ uint32_t NOP_function(char *instruction) {
 
 uint32_t directive_function(char *assembly_instruction) {
     // Copies assembly instruction
-    unsigned long n = strlen(assembly_instruction);
-    char instruction_copy[n + 1];
-
-    for (int i = 0; i <= n; i++) {
-        instruction_copy[i] = assembly_instruction[i];
-    }
+    char instruction_copy[strlen(assembly_instruction) + 1];
+    strcpy(instruction_copy, assembly_instruction);
 
     // Takes the second word
-    char *token = strtok(instruction_copy, " ");
-    token = strtok(NULL, " ");
-
-    // Converts second word into a long and returns it
-    char *endptr;
-    return strtol(token, &endptr, 16);
+    char *directive = strtok(instruction_copy, " ");
+    directive = strtok(NULL, " ");
+    if (directive[0] == '0') { // 0x..
+        return strtol(directive, NULL, BASE_16);
+    } else {
+        return strtol(directive, NULL, BASE_10);
+    }
 }
 
 // ---------------------------------- Mapping of instruction to function pointer ---------------------------------------
@@ -47,7 +44,7 @@ func_ptr get_function(char* assembly_instruction) {
         return &NOP_function;
     }
     // Directive
-    if (assembly_instruction[0] == '.') {
+    if (strstr(assembly_instruction, ".int") != NULL) {
         return &directive_function;
     }
     // Instructions:
@@ -63,13 +60,15 @@ func_ptr get_function(char* assembly_instruction) {
     return &assemble_DPI;
 }
 
+// Global variables to be accessed elsewhere in the program
 uint32_t program_counter;
 dynmap symbol_table;
 
+// -------------------------------------------- ENTRY POINT OF PROGRAMME ---------------------------------------
 int main(int argc, char **argv) {
+    // Initializing variables
     char *line = malloc(sizeof(char) * MAX_LINE_LENGTH + 2);
     uint32_t binary_instruction;
-    // dynarray output = dynarray_create(DYNARRAY_LIMIT);
 
     FILE *infile = fopen(argv[1], "r");
     if (infile == NULL) {
@@ -93,7 +92,7 @@ int main(int argc, char **argv) {
         }
 
         // Check if the line is a label
-        if (strchr(line, ':') != NULL) { // len - 2 due to '\0'
+        if (strchr(line, ':') != NULL) {
             // add an entry to the table where key is label and value is address
             line[strchr(line, ':') - line] = '\0';
             dynmap_add(symbol_table, line, program_counter);
@@ -102,19 +101,18 @@ int main(int argc, char **argv) {
         program_counter += 4;
     }
 
+    // Go back to the beginning of infile
     rewind(infile);
 
-    program_counter = 0;
     // Second pass: assemble instructions
+    program_counter = 0;
     while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
-        // Determines which parsing function to be used: could be a NOP function, directive, DPI, Branch or Single DTI
+        // Remove '\n'
         line[strlen(line) - 1] = '\0';
-        printf("%s\n", line);
 
         // Skips empty lines  
         char *temp = line;
         while (isspace(*temp)) temp++;   
-
         if (*temp == '\0') {
             continue;
         }
@@ -124,27 +122,14 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        // Check for directives
-        char line_copy[strlen(temp) + 1];
-        strcpy(line_copy, temp);
-        char *first = strtok(line_copy, " ");
-        if (strcmp(first, ".int") == 0) {
-            char *directive = strtok(NULL, " ");
-            if (directive[0] == '0') { // 0x..
-                binary_instruction = strtol(directive, NULL, 16);
-            } else {
-                binary_instruction = strtol(directive, NULL, 10);
-            }
-        } else {
-            func_ptr parsing_function = get_function(temp);
-            binary_instruction = (parsing_function)(temp);
-        }
-        printf("%x\n", binary_instruction);
-        print_binary(binary_instruction);
+        // Determines which parsing function to be used: could be a NOP function, directive, DPI, Branch or Single DTI
+        func_ptr parsing_function = get_function(temp);
+        binary_instruction = (parsing_function)(temp);
+
         fwrite(&binary_instruction, sizeof(uint32_t), 1, outfile); 
+
         program_counter += 4;
     }
-
     fclose(infile);
     fclose(outfile);
     free(line);

@@ -70,7 +70,7 @@ static branch_IR build_branch_IR(char *assembly_instruction) {
                 // Literal is represented in hex
                 second += 2;
                 char *endptr;
-                ir->arg = strtol(second, &endptr, 16) - program_counter;
+                ir->arg = strtol(second, &endptr, BASE_16) - program_counter;
             } else {
                 // Literal is represented in decimal
                 ir->arg = atoi(second) - program_counter;
@@ -116,4 +116,6 @@ uint32_t assemble_branches(char *assembly_instruction) {
         case CONDITIONAL:
             return BRANCH_CONDITIONAL_TEMPLATE | (shrink32(ir->arg / 4, 19) << 5) | ir->condition;
     }
+    perror("Couldn't match any cases in branches.");
+    exit(EXIT_FAILURE);
 }

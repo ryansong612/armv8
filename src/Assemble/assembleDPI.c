@@ -95,7 +95,7 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
         if (isalpha(token[1])) {
             rd = ZERO_REGISTER_ID;
         } else {
-            rd = strtol(token + 1, NULL, 10);
+            rd = strtol(token + 1, NULL, BASE_10);
         }
     }
 
@@ -109,7 +109,7 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
         if (isalpha(token[1])) {
             rn = ZERO_REGISTER_ID;
         } else {
-            rn = strtol(token + 1, NULL, 10);
+            rn = strtol(token + 1, NULL, BASE_10);
         }
     }
 
@@ -125,9 +125,9 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
             // extracting imm12
             uint32_t imm12;
             if (token[1] == '0') { //hex
-               imm12 = strtol(token + 1, NULL, 16);
+               imm12 = strtol(token + 1, NULL, BASE_16);
             } else { // decimal
-                imm12 = strtol(token + 1, NULL, 10);
+                imm12 = strtol(token + 1, NULL, BASE_10);
             }
 
             uint32_t sh;
@@ -137,7 +137,7 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
             if (token != NULL) {
                 token = strtok(NULL, " ");
                 assert (token != NULL);
-                sh = strtol(token + 1, NULL, 10) == IMMEDIATE_SHIFT;
+                sh = strtol(token + 1, NULL, BASE_10) == IMMEDIATE_SHIFT;
             } else {
                 sh = 0;
             }
@@ -170,7 +170,7 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
         case BIT_WIDTH_32: {
             // 'X' or 'W' flags register with 64 bit access
             // extracting rm
-            uint32_t rm = strtol(token + 1, NULL, 10);
+            uint32_t rm = strtol(token + 1, NULL, BASE_10);
 
             // extracting shift type
             token = strtok(NULL, " ");
@@ -192,10 +192,10 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
                 assert (token != NULL);
                 if (token[1] == '0') {
                     // hex
-                    shift_imm = strtol(token + 1, NULL, 16);
+                    shift_imm = strtol(token + 1, NULL, BASE_16);
                 } else {
                     // decimal
-                    shift_imm = strtol(token + 1, NULL, 10);
+                    shift_imm = strtol(token + 1, NULL, BASE_10);
                 }
             } else {
                 shift_imm = 0;
@@ -314,7 +314,7 @@ static uint32_t parse_logic(char *assembler_instruction) {
         if (isalpha(token[1])) {
             rd = ZERO_REGISTER_ID;
         } else {
-            rd = strtol(token + 1, NULL, 10);
+            rd = strtol(token + 1, NULL, BASE_10);
         }
     }
 
@@ -326,7 +326,7 @@ static uint32_t parse_logic(char *assembler_instruction) {
         if (isalpha(token[1])) {
             rn = ZERO_REGISTER_ID;
         } else {
-            rn = strtol(token + 1, NULL, 10);
+            rn = strtol(token + 1, NULL, BASE_10);
         }
     }
 
@@ -336,7 +336,7 @@ static uint32_t parse_logic(char *assembler_instruction) {
     if (isalpha(token[1])) {
         rm = ZERO_REGISTER_ID;
     } else {
-        rm = strtol(token + 1, NULL, 10);
+        rm = strtol(token + 1, NULL, BASE_10);
     }
 
     // extracting shift type
@@ -366,9 +366,9 @@ static uint32_t parse_logic(char *assembler_instruction) {
     token = strtok(NULL, " ");
     if (token != NULL) {
         if (token[1] == '0') {
-            imm6 = strtol(token + 1, NULL, 16);
+            imm6 = strtol(token + 1, NULL, BASE_16);
         } else {
-            imm6 = strtol(token + 1, NULL, 10);
+            imm6 = strtol(token + 1, NULL, BASE_10);
         }
     }
 
@@ -437,16 +437,16 @@ static uint32_t parse_wide_move(char *assembler_instruction) {
     if (isalpha(token[1])) {
         rd = ZERO_REGISTER_ID;
     } else {
-        rd = strtol(token + 1, NULL, 10);
+        rd = strtol(token + 1, NULL, BASE_10);
     }
 
     // extracting imm16
     token = strtok(NULL, ", ");
     assert (token != NULL);
     if (token[1] == '0') { // #0x..
-        imm16 = strtol(token + 1, NULL, 16);
+        imm16 = strtol(token + 1, NULL, BASE_16);
     } else {
-        imm16 = strtol(token + 1, NULL, 10);
+        imm16 = strtol(token + 1, NULL, BASE_10);
     }
 
 
@@ -461,9 +461,9 @@ static uint32_t parse_wide_move(char *assembler_instruction) {
         // Must either be 0 or 16 so hw = 1
         uint32_t shift_amount;
         if (token[1] == '0') { // #0x..
-            shift_amount = strtol(token + 1, NULL, 16);
+            shift_amount = strtol(token + 1, NULL, BASE_16);
         } else {
-            shift_amount = strtol(token + 1, NULL, 10);
+            shift_amount = strtol(token + 1, NULL, BASE_10);
         }
         hw = shift_amount / 16;
     }
@@ -536,7 +536,7 @@ static uint32_t parse_multiply(char *assembler_instruction) {
     if (isalpha(token[1])) {
         rd = ZERO_REGISTER_ID;
     } else {
-        rd = strtol(token + 1, NULL, 10);
+        rd = strtol(token + 1, NULL, BASE_10);
     }
 
     // extracting Rn
@@ -545,7 +545,7 @@ static uint32_t parse_multiply(char *assembler_instruction) {
     if (isalpha(token[1])) {
         rn = ZERO_REGISTER_ID;
     } else {
-        rn = strtol(token + 1, NULL, 10);
+        rn = strtol(token + 1, NULL, BASE_10);
     }
 
     // extracting Rm
@@ -554,7 +554,7 @@ static uint32_t parse_multiply(char *assembler_instruction) {
     if (isalpha(token[1])) {
         rm = ZERO_REGISTER_ID;
     } else {
-        rm = strtol(token + 1, NULL, 10);
+        rm = strtol(token + 1, NULL, BASE_10);
     }
 
     // extracting Ra
@@ -564,7 +564,7 @@ static uint32_t parse_multiply(char *assembler_instruction) {
         if (isalpha(token[1])) {
             ra = ZERO_REGISTER_ID;
         } else {
-            ra = strtol(token + 1, NULL, 10);
+            ra = strtol(token + 1, NULL, BASE_10);
         }
     }
 
