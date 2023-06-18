@@ -1,0 +1,9 @@
+_buffer_template:
+    .int 256 (0x00)
+    .int 0 (0x04)
+    .int 0x00038041 (0x08)
+    .int 0x10 (0x0c)
+    .int 0 (0x12)
+    .int 130 (0x14)
+    .int 1 (0x18)
+    .int 0 (0x1c)
