@@ -12,7 +12,6 @@
 
 #define MAX_LINE_LENGTH 256
 #define NOP 3573751839; // No operation instruction
-#define HALT 2315255808 // Termination instruction
 
 typedef uint32_t (*func_ptr)(char *);
 
@@ -27,6 +26,12 @@ uint32_t directive_function(char *assembly_instruction) {
     strcpy(instruction_copy, assembly_instruction);
 
     // Takes the second word
+    char *token = strtok(instruction_copy, " ");
+    token = strtok(NULL, " ");
+
+    // Converts second word into a long and returns it
+    char *end_ptr;
+    return strtol(token, &end_ptr, 16);
     char *directive = strtok(instruction_copy, " ");
     directive = strtok(NULL, " ");
     if (directive[0] == '0') { // 0x..
@@ -112,7 +117,7 @@ int main(int argc, char **argv) {
 
         // Skips empty lines  
         char *temp = line;
-        while (isspace(*temp)) temp++;   
+        while (isspace(*temp)) temp++;
         if (*temp == '\0') {
             continue;
         }
