@@ -75,13 +75,13 @@ int main(int argc, char **argv) {
     char *line = malloc(sizeof(char) * MAX_LINE_LENGTH + 2);
     uint32_t binary_instruction;
 
-    FILE *infile = fopen("../Pi/led_blink.s", "r");
+    FILE *infile = fopen(argv[1], "r");
     if (infile == NULL) {
         perror("File does not exist.\n");
         exit(EXIT_FAILURE);
     }
 
-    FILE *outfile = fopen(".out", "wb");
+    FILE *outfile = fopen(argv[2], "wb");
     if (outfile == NULL) {
         perror("File does not exist.\n");
         exit(EXIT_FAILURE);
