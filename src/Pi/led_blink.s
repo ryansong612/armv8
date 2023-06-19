@@ -57,7 +57,7 @@ load_to_write_register:
     orr w20, wzr, w3, lsl #4
     add w20, w20, #8
     str w20, [w7]
-      movz w15 #0xFFFFFFFF
+    movz w15 #0xFFFFFFFF
 
 write_delay:
     subs w15, w15, #1
@@ -72,30 +72,6 @@ check_read_full_flag_on:
 
 read_from_read_register:
     ldr w20, [w6]
-
-check_write_full_flag_off:
-    ldr w20, [w8]
-    orr w20, wzr, x20, ror #31
-      cmp w20, #1
-    b.eq check_write_full_flag_on
-
-load_to_write_register:
-    str w2, [w4]
-    str w0, [w5]
-    orr w20, wzr, w3, lsl #4
-    add w20, w20, #8
-    str w20, [w7]
-
-check_read_full_flag_off:
-    ldr w20, [w8]
-    orr w20, wzr, w20, ror, #30
-    and w20, w20, #1
-    cmp w20, #1
-    b.eq check_read_full_flag_on
-
-read_from_read_register:
-    ldr w20, [w6]
-    movz w15 #0xFFFFFFFF
 
 read_delay:
     subs w15, w15, #1
