@@ -70,7 +70,7 @@ void emulate(uint8_t *memory) {
             current_instruction += ((uint32_t) memory[program_counter + i]) << (i * 8);
         }
         // Special Instructions
-        if (current_instruction == HALT || current_instruction == 0) {
+        if (current_instruction == HALT) {
             return;
         }
         if (current_instruction == NOP) {

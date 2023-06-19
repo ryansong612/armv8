@@ -71,18 +71,11 @@ void load_literal(uint8_t *memory, uint32_t instruction, general_purpose_registe
 // starting from address into the target register.
 void unsigned_immediate_offset(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int8_t xn, int num_byte_to_access, bool load) {
     uint64_t imm12 = get_bits(instruction, 10, 21) * 8;
-    printf("%lu\n", imm12);
 
     // Check validity of arguments
     if (target_register->mode) {
-        // if (imm12 > 32760) {
-        //     return false;
-        // }
         assert(imm12 <= 32760);
     } else {
-        // if (imm12 > 16380) {
-        //     return false;
-        // }
         assert(imm12 <= 16380);
     }
 
@@ -134,11 +127,6 @@ void registerOffset(uint8_t *memory, uint32_t instruction, general_purpose_regis
     // Add the two values of registers
     int8_t xm = get_bits(instruction, 16, 20);
 
-    // Check register has the right mode
-    // if (!find_register(xm)->mode) {
-    //     printf("target register has wrong mode!");
-    //     return false;
-    // }
     assert(find_register(xm)->mode);
 
     int64_t address = find_register(xm)->val + find_register(xn)->val;

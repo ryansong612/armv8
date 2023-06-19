@@ -25,13 +25,7 @@ uint32_t directive_function(char *assembly_instruction) {
     char instruction_copy[strlen(assembly_instruction) + 1];
     strcpy(instruction_copy, assembly_instruction);
 
-    // Takes the second word
-    char *token = strtok(instruction_copy, " ");
-    token = strtok(NULL, " ");
-
     // Converts second word into a long and returns it
-    char *end_ptr;
-    return strtol(token, &end_ptr, 16);
     char *directive = strtok(instruction_copy, " ");
     directive = strtok(NULL, " ");
     if (directive[0] == '0') { // 0x..

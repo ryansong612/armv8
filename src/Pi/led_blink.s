@@ -77,4 +77,5 @@ read_delay:
     subs w15, w15, #1
     b.ne read_delay
 
+and x0, x0, x0
 b check_write_full_flag_on
