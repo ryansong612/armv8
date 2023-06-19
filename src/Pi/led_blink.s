@@ -47,7 +47,7 @@ ldr w8, status_register_address
 
 check_write_full_flag_on:
     ldr w20, [w8]
-    orr w20, wzr
+    orr w20, wzr, w20, ror #31
     cmp w20, #1
     b.eq check_write_full_flag_on
 
@@ -63,7 +63,6 @@ write_delay:
     subs w15, w15, #1
     b.ne write_delay
 
-
 check_read_full_flag_on:
     ldr w20, [w8]
     orr w20, wzr, w20, ror #30
@@ -71,10 +70,8 @@ check_read_full_flag_on:
     cmp w20, #1
     b.eq check_read_full_flag_on
 
-
 read_from_read_register:
     ldr w20, [w6]
-
 
 check_write_full_flag_off:
     ldr w20, [w8]
@@ -87,8 +84,7 @@ load_to_write_register:
     str w0, [w5]
     orr w20, wzr, w3, lsl #4
     add w20, w20, #8
-    str w20 [w7]
-
+    str w20, [w7]
 
 check_read_full_flag_off:
     ldr w20, [w8]
