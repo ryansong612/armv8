@@ -109,9 +109,12 @@ int main(int argc, char **argv) {
     // Go back to the beginning of infile
     rewind(infile);
 
+
     // Second pass: assemble instructions
     program_counter = 0;
+    int c = 1;
     while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
+        printf("%s\n", line);
         // Remove '\n'
         line[strlen(line) - 1] = '\0';
 
@@ -131,10 +134,13 @@ int main(int argc, char **argv) {
         func_ptr parsing_function = get_function(temp);
         binary_instruction = (parsing_function)(temp);
 
+
+
         fwrite(&binary_instruction, sizeof(uint32_t), 1, outfile); 
 
         program_counter += 4;
     }
+
     fclose(infile);
     fclose(outfile);
     free(line);
