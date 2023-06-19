@@ -19,36 +19,36 @@ pin:
     .int 130
 
 buffer_address:
-	  .int 0x80000
+	.int 0x80000
 
 led_status_address:
     .int 0x80018
 
 pin_address:
-	  .int 0x80014
+	.int 0x80014
 
 read_register_address:
-	  .int 0x3f00b880
+	.int 0x3f00b880
 
 write_register_address:
-	  .int 0x3f00b8a0
+	.int 0x3f00b8a0
 
 status_register_address:
-	  .int 0x3f00b8b8
+	.int 0x3f00b8b8
 
-ldr w0 pin
-ldr w1 turn_on_status
-ldr w2 turn_off_status
-ldr w3 buffer_address
-ldr w4 led_status_address
-ldr w5 pin_address
-ldr w6 read_register_address
-ldr w7 write_register_address
-ldr w8 status_register_address
+ldr w0, pin
+ldr w1, turn_on_status
+ldr w2, turn_off_status
+ldr w3, buffer_address
+ldr w4, led_status_address
+ldr w5, pin_address
+ldr w6, read_register_address
+ldr w7, write_register_address
+ldr w8, status_register_address
 
 
 check_write_full_flag_on:
-    ldr w20 [w8]
+    ldr w20, [w8]
     orr w20, wzr
     cmp w20, #1
     b.eq check_write_full_flag_on
@@ -60,7 +60,7 @@ load_to_write_register:
     str w0, [w5]
     orr w20, wzr, w3, lsl #4
     add w20, w20, #8
-    str w20 [w7]
+    str w20, [w7]
       movz w15 #0xFFFFFFFF
 
 write_delay:
@@ -69,7 +69,7 @@ write_delay:
 
 
 check_read_full_flag_on:
-    ldr w20 [w8]
+    ldr w20, [w8]
     orr w20, wzr, w20, ror #30
     and w20, w20, #1
     cmp w20, #1
@@ -77,11 +77,11 @@ check_read_full_flag_on:
 
 
 read_from_read_register:
-    ldr w20 [w6]
+    ldr w20, [w6]
 
 
 check_write_full_flag_off:
-    ldr w20 [w8]
+    ldr w20, [w8]
     orr w20, wzr, x20, ror #31
       cmp w20, #1
     b.eq check_write_full_flag_on
@@ -95,14 +95,14 @@ load_to_write_register:
 
 
 check_read_full_flag_off:
-    ldr w20 [w8]
+    ldr w20, [w8]
     orr w20, wzr, w20, ror, #30
     and w20, w20, #1
     cmp w20, #1
     b.eq check_read_full_flag_on
 
 read_from_read_register:
-    ldr w20 [w6]
+    ldr w20, [w6]
     movz w15 #0xFFFFFFFF
 
 read_delay:
