@@ -19,7 +19,7 @@ dynmap dynmap_create() {
 // pre: when rebuild is being called, the size of map >= the cap of map
 static void dynmap_rebuild(dynmap map) {
     map->cap += DYNMAP_DEFAULT_LIMIT;
-    map->entries = realloc(map->entries, map->cap * sizeof(uint8_t));
+    map->entries = realloc(map->entries, (map->cap) * sizeof(struct map_entry));
     assert (map->entries != NULL);
 }
 
@@ -42,7 +42,8 @@ void dynmap_add(dynmap map, char* key, uint8_t value) {
     map_entry new_entry = malloc(sizeof(struct map_entry));
     new_entry->key = strdup(key);
     new_entry->value = value;
-    map->entries[map->size++] = new_entry;
+    map->entries[map->size] = new_entry;
+    (map->size)++;
 }
 
 uint32_t dynmap_get(dynmap map, char* key) {

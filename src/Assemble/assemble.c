@@ -75,13 +75,13 @@ int main(int argc, char **argv) {
     char *line = malloc(sizeof(char) * MAX_LINE_LENGTH + 2);
     uint32_t binary_instruction;
 
-    FILE *infile = fopen(argv[1], "r");
+    FILE *infile = fopen("../Pi/led_blink.s", "r");
     if (infile == NULL) {
         perror("File does not exist.\n");
         exit(EXIT_FAILURE);
     }
 
-    FILE *outfile = fopen(argv[2], "wb");
+    FILE *outfile = fopen(".out", "wb");
     if (outfile == NULL) {
         perror("File does not exist.\n");
         exit(EXIT_FAILURE);
@@ -133,8 +133,6 @@ int main(int argc, char **argv) {
         // Determines which parsing function to be used: could be a NOP function, directive, DPI, Branch or Single DTI
         func_ptr parsing_function = get_function(temp);
         binary_instruction = (parsing_function)(temp);
-
-
 
         fwrite(&binary_instruction, sizeof(uint32_t), 1, outfile); 
 

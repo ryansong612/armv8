@@ -1,13 +1,12 @@
 _buffer_template:
-    .int 32 (0x00)
-    .int 0 (0x04)
-    .int 0x00038041 (0x08)
-    .int 8 (0x0c)
-    .int 0 (0x10)
-    .int 130 (0x14)
-    .int 1 (0x18)
-    .int 0 (0x1c)
-
+    .int 32 ;(0x00)
+    .int 0 ;(0x04)
+    .int 0x00038041 ;(0x08)
+    .int 8 ;(0x0c)
+    .int 0 ;(0x10)
+    .int 130 ;(0x14)
+    .int 1 ;(0x18)
+    .int 0 ;(0x1c)
 
 turn_on_status:
     .int 1
@@ -46,14 +45,11 @@ ldr w6, read_register_address
 ldr w7, write_register_address
 ldr w8, status_register_address
 
-
 check_write_full_flag_on:
     ldr w20, [w8]
     orr w20, wzr
     cmp w20, #1
     b.eq check_write_full_flag_on
-
-
 
 load_to_write_register:
     str w1, [w4]
