@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <assert.h>
 #include <regex.h>
-#include "dynmap.h"
 #include <ctype.h>
-#include "../BitUtils/custombit.h"
 
+#include "dynmap.h"
+#include "../BitUtils/custombit.h"
 
 #define SF 30
 #define U 24

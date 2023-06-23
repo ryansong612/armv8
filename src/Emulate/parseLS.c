@@ -14,8 +14,10 @@ extern general_purpose_register zero_register;
 extern uint64_t program_counter;
 extern p_state p_state_register;
 
-// Takes numBytesToAccess number of bytes from memory starting from the address
-// and loads this 4-byte (32 bits) or 8-byte number (64 bits) on to the register.
+/*
+    Takes numBytesToAccess number of bytes from memory starting from the address
+    and loads this 4-byte (32 bits) or 8-byte number (64 bits) on to the register.
+*/ 
 void load_to_register(int num_byte_to_access, uint8_t *memory, int64_t address, general_purpose_register *target_register) {
     uint64_t total = 0;
     for (int i = 0; i < num_byte_to_access; i++) {
@@ -29,9 +31,11 @@ void load_to_register(int num_byte_to_access, uint8_t *memory, int64_t address, 
     }
 }
 
-// Takes numBytesToAccess number of bytes from target register and 
-// stores this 4-byte (32 bits) or 8-byte number (64 bits) to the memory
-// starting from the address.
+/*
+    Takes numBytesToAccess number of bytes from target register and 
+    stores this 4-byte (32 bits) or 8-byte number (64 bits) to the memory
+    starting from the address.
+*/
 void store_to_memory(int num_byte_to_access, uint8_t *memory, int64_t address, general_purpose_register *target_register) {
     // what's the difference between read_64 and read_32?
     if (num_byte_to_access == BYTES_IN_X_MODE_REGISTER) {
@@ -45,8 +49,10 @@ void store_to_memory(int num_byte_to_access, uint8_t *memory, int64_t address, g
     }
 }
 
-// Calculate address by adding the PC and the offset (simm19 ∗ 4). Then saves num_byte_to_access number of bytes
-// starting from address into the target register.
+/*
+    Calculate address by adding the PC and the offset (simm19 ∗ 4). Then saves num_byte_to_access number of bytes
+    starting from address into the target register.    
+*/ 
 void load_literal(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int num_byte_to_access) {
     // gets address PC + simms19 * 4
     uint32_t simms19 = get_bits(instruction, 5, 23) * 4;
@@ -67,8 +73,10 @@ void load_literal(uint8_t *memory, uint32_t instruction, general_purpose_registe
     }
 }
 
-// Calculate address by adding the value stored in xn and the unsigned offset imm12. Then saves num_byte_to_access number of bytes
-// starting from address into the target register.
+/*
+    Calculate address by adding the value stored in xn and the unsigned offset imm12. Then saves num_byte_to_access number of bytes
+    starting from address into the target register.
+*/ 
 void unsigned_immediate_offset(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int8_t xn, int num_byte_to_access, bool load) {
     uint64_t imm12 = get_bits(instruction, 10, 21) * 8;
 
@@ -89,9 +97,11 @@ void unsigned_immediate_offset(uint8_t *memory, uint32_t instruction, general_pu
     }
 }
 
-// If it is pre-indexed, calculate address by adding the value stored in xn and the signed offset simm9.
-// If it is post-indexed, address is given by the value stored in xn.
-// Then, it saves num_byte_to_access number of bytes starting from address to target_register.
+/*
+    If it is pre-indexed, calculate address by adding the value stored in xn and the signed offset simm9.
+    If it is post-indexed, address is given by the value stored in xn.
+    Then, it saves num_byte_to_access number of bytes starting from address to target_register.
+*/
 void pre_or_post_indexed(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int8_t xn, int num_byte_to_access, bool load, bool pre) {
     // Calculates value of address
     int32_t simm9 = extend_sign_bit(get_bits(instruction, 12, 20), 9);
@@ -121,8 +131,10 @@ void pre_or_post_indexed(uint8_t *memory, uint32_t instruction, general_purpose_
     }
 }
 
-// Calculate the address by adding value stored in xn and value stored in xm
-// Then, it saves num_byte_to_access number of bytes starting from address to target_register.
+/*
+    Calculate the address by adding value stored in xn and value stored in xm.
+    Then, it saves num_byte_to_access number of bytes starting from address to target_register.
+*/ 
 void registerOffset(uint8_t *memory, uint32_t instruction, general_purpose_register *target_register, int8_t xn, int num_byte_to_access, bool load) {
     // Add the two values of registers
     int8_t xm = get_bits(instruction, 16, 20);
@@ -139,8 +151,10 @@ void registerOffset(uint8_t *memory, uint32_t instruction, general_purpose_regis
     }
 }
 
-// Entry point from emulate. Parses the instructions and invokes the functions above
-// depending on the instruction.
+/*
+    Entry point from emulate. Parses the instructions and invokes the functions above
+    depending on the instruction.
+*/ 
 void execute_DTI(uint8_t *memory, uint32_t instruction) {
     // get target register
     uint32_t target = get_bits(instruction,0, 4);

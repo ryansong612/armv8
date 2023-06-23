@@ -9,7 +9,6 @@
 #include "assembleDPI.h"
 #include "../BitUtils/custombit.h"
 
-
 // Defining Constants
 #define ADD 0
 #define ADDS 1
@@ -117,7 +116,6 @@ static uint32_t parse_arithmetic(char *assembler_instruction) {
     token = strtok(NULL, " ");
 
     uint32_t assembled_instruction = sf;
-
 
     switch (token[0]) {
         case IMMEDIATE: {
@@ -362,7 +360,6 @@ static uint32_t parse_logic(char *assembler_instruction) {
     opr <<= 1;
     opr |= n;
 
-
     token = strtok(NULL, " ");
     if (token != NULL) {
         if (token[1] == '0') {
@@ -371,7 +368,6 @@ static uint32_t parse_logic(char *assembler_instruction) {
             imm6 = strtol(token + 1, NULL, BASE_10);
         }
     }
-
 
     uint32_t assembled_instruction = sf;
 
