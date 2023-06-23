@@ -4,7 +4,7 @@
 #ifndef ARMV8_32_DYNMAP_H
 #define ARMV8_32_DYNMAP_H
 
-#define DYNMAP_DEFAULT_LIMIT 16
+#define DYNMAP_DEFAULT_LIMIT 30
 
 struct map_entry {
     char* key;

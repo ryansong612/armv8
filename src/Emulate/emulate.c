@@ -11,7 +11,6 @@
 #include "parseBranches.h"
 #include "readnwrite.h"
 
-
 #define MAX_FILE_SIZE 2097152 // 2MB
 #define NOP 3573751839 // No operation instruction
 #define HALT 2315255808 // Termination instruction
@@ -45,7 +44,7 @@ p_state p_state_register = { .negative_condition_flag = false,
                           .carry_condition_flag = false,
                           .overflow_condition_flag = false };
 
-void initializeRegisters(void) {
+void initialize_registers(void) {
     for (int8_t i = 0; i < 31; i++) {
         general_purpose_register new_register = { .id = i,
                 .val = 0,
@@ -81,15 +80,19 @@ void emulate(uint8_t *memory) {
         uint32_t op0 = get_bits(current_instruction, 25, 28);
         switch(get_bits(op0, 1, 3)) {
             case 4:
+                printf("dpi-immediate\n");
                 execute_DPIImmediate(current_instruction);
                 break;
             case 5:
+                printf("branches\n");
                 execute_branches(current_instruction);
                 break;
             default:
                 if (get_bits(op0, 2, 2) == 1 && get_bits(op0, 0, 0) == 0) {
+                    printf("dti\n");
                     execute_DTI(memory, current_instruction);
                 } else {
+                    printf("register\n");
                     execute_DPIRegister(current_instruction);
                 }
         }
@@ -189,7 +192,7 @@ int main(int argc, char **argv) {
     read_file(argv[1], memory);
 
     // Run the emulator
-    initializeRegisters();
+    initialize_registers();
     emulate(memory);
     terminate(memory, output_path);
 
