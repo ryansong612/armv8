@@ -4,13 +4,12 @@
 #include <stdint.h>
 
 #include "emulate.h"
-#include "custombit.h"
+#include "../BitUtils/custombit.h"
 #include "dpi-immediate.h"
 #include "dpi-register.h"
 #include "parseLS.h"
 #include "parseBranches.h"
 #include "readnwrite.h"
-
 
 #define MAX_FILE_SIZE 2097152 // 2MB
 #define NOP 3573751839 // No operation instruction
@@ -28,19 +27,7 @@ void read_file(char *dst, uint8_t *memory) {
     }
 
     fread(memory, 1, MAX_FILE_SIZE, ptr);
-
-    // Chunking them into instructions (4 bytes)
-    // size_t numInstructions = fileSize / sizeof(uint32_t);
-
     fclose(ptr);
-
-    /*
-    // Debugging
-    for (size_t i=0; i < numInstructions; i++) {
-        printf("%zu:", i);
-        printBinary(instructions[i]);
-    }
-    */
 }
 
 // ---------------------------------------------- INITIALIZING REGISTERS -----------------------------------------------
@@ -57,7 +44,7 @@ p_state p_state_register = { .negative_condition_flag = false,
                           .carry_condition_flag = false,
                           .overflow_condition_flag = false };
 
-void initializeRegisters(void) {
+void initialize_registers(void) {
     for (int8_t i = 0; i < 31; i++) {
         general_purpose_register new_register = { .id = i,
                 .val = 0,
@@ -70,6 +57,11 @@ void initializeRegisters(void) {
     }
 }
 
+/*
+ * Emulator loop. Takes an instruction with consists of 4 bytes of memory, and send to different functions based on
+ * op0. The instructions can be categorised into DPI Immediate, DPI Register, Loads and Stores and Branches. Special
+ * Instructions include HALT, which terminates the emulator and NOP, which just moves on to the next instruction.
+ */
 void emulate(uint8_t *memory) {
     while (true) {
         uint32_t current_instruction = 0;
@@ -77,7 +69,7 @@ void emulate(uint8_t *memory) {
             current_instruction += ((uint32_t) memory[program_counter + i]) << (i * 8);
         }
         // Special Instructions
-        if (current_instruction == HALT || current_instruction == 0) {
+        if (current_instruction == HALT) {
             return;
         }
         if (current_instruction == NOP) {
@@ -88,21 +80,28 @@ void emulate(uint8_t *memory) {
         uint32_t op0 = get_bits(current_instruction, 25, 28);
         switch(get_bits(op0, 1, 3)) {
             case 4:
+                printf("dpi-immediate\n");
                 execute_DPIImmediate(current_instruction);
                 break;
             case 5:
+                printf("branches\n");
                 execute_branches(current_instruction);
                 break;
             default:
                 if (get_bits(op0, 2, 2) == 1 && get_bits(op0, 0, 0) == 0) {
+                    printf("dti\n");
                     execute_DTI(memory, current_instruction);
                 } else {
+                    printf("register\n");
                     execute_DPIRegister(current_instruction);
                 }
         }
     }
 }
 // -------------------------------------------------- TERMINATION ------------------------------------------------------
+/*
+ * Prints the output of the emulator into the file specified by the output_path.
+ */
 void terminate(uint8_t *memory, char *output_path) {
     // Create file
     FILE *out = fopen(output_path, "w");
@@ -193,7 +192,7 @@ int main(int argc, char **argv) {
     read_file(argv[1], memory);
 
     // Run the emulator
-    initializeRegisters();
+    initialize_registers();
     emulate(memory);
     terminate(memory, output_path);
 

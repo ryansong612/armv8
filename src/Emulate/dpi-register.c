@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "custombit.h"
+#include "../BitUtils/custombit.h"
 #include "emulate.h"
 #include "readnwrite.h"
 #include "dpi-register.h"
@@ -45,7 +45,6 @@ extern p_state p_state_register;
 
 // ------------------------------------- SHIFTS ---------------------------------------------------
 // value manipulations (lsl, lsr, asr, ror)
-// for lsl and lsr, if negative, then take the positive value before shift
 
 // -------------- logical shift left --------------------
 

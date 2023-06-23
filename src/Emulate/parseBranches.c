@@ -3,7 +3,7 @@
 #include "parseBranches.h"
 #include "readnwrite.h"
 #include "emulate.h"
-#include "custombit.h"
+#include "../BitUtils/custombit.h"
 
 #define BRANCH_TYPE_START 29
 #define BRANCH_TYPE_END 31
@@ -32,8 +32,11 @@ extern general_purpose_register zero_register;
 extern uint64_t program_counter;
 extern p_state p_state_register;
 
+/*
+ * Executes the unconditional type branch instruction that is indicated by the first 3 bits of the instruction being
+ * 000. This applies an offset of simm26 * 4 (after sign-extending it to a 64-bit number) to the program counter.
+ */
 void execute_branch_unconditional(uint32_t instruction) {
-    // Apply offset of simm26 * 4 (sign-extended to 64-bit) to the program counter
     int64_t offset = extend_sign_bit(get_bits(instruction,
                                             UNCONDITIONAL_OFFSET_START,
                                             UNCONDITIONAL_OFFSET_END) * 4,
@@ -41,14 +44,20 @@ void execute_branch_unconditional(uint32_t instruction) {
     program_counter += offset;
 }
 
+/*
+ * Executes the register type branch instruction that is indicated by the first 3 bits of the instruction being
+ * 110. This sets the program counter to the address contained in the register that is encoded in Xn.
+ */
 void execute_branch_register(uint32_t instruction) {
-    // Sets the program counter to the specified address
     program_counter = read_64(general_purpose_register_list[get_bits(instruction, XN_START, XN_END)]);
 }
 
+/*
+ * Executes the conditional type branch instruction that is indicated by the first 3 bits of the instruction being
+ * 010. This applies an offset of simm19 * 4 (after sign-extending it to a 64-bit number) to the program counter, if
+ * the condition enconded in cond is satisfied. Otherwise, just increment the program counter by 4.
+ */
 void execute_branch_conditional(uint32_t instruction) {
-    // Applies offset of simm19 * 4 (sign-extended to 64-bit) to the program counter if the PState satisfies the
-    // condition specified in bits 0-3
     uint32_t cond = get_bits(instruction, CONDITION_START, CONDITION_END);
 
     bool to_execute = false;
