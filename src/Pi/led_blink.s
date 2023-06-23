@@ -13,6 +13,7 @@ ldr w11, write_register_address
 ldr w12, status_register_address
 ldr w13, buffer_address_with_channel
 
+
 check_write_full_flag_on:
     ldr w20, [w12]
     orr w20, wzr, w20, lsr #31
