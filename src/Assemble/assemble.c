@@ -103,10 +103,8 @@ int main(int argc, char **argv) {
     // Go back to the beginning of infile
     rewind(infile);
 
-
     // Second pass: assemble instructions
     program_counter = 0;
-    int c = 1;
     while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
         printf("%s\n", line);
         // Remove '\n'
