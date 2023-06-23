@@ -5,7 +5,6 @@
 #include "dpi-register.h"
 #include "dpi-immediate.h"
 
-// constants for accessing the register
 #define OPI_START_BIT 23
 #define M_BIT 28
 #define N_BIT 21
@@ -16,7 +15,7 @@
 #define OPC_START 29
 #define OPC_END 30
 
-// types of shifts (shift bits in operand)
+// shifts
 #define LSL 0
 #define LSR 1
 #define ASR 2
@@ -27,7 +26,7 @@
 #define OPC10 2
 #define OPC11 3
 
-// operations (N bits)
+// operations
 #define AND 0
 #define BIC 1
 #define ORR 0
@@ -45,12 +44,8 @@ extern uint64_t program_counter;
 extern p_state p_state_register;
 
 // ------------------------------------- SHIFTS ---------------------------------------------------
-
 // value manipulations (lsl, lsr, asr, ror)
-// 1. lsl, lsr = logical left and right shift. 
-//               if negative, then take the positive value before shift
-// 2. asr = arithmetic right shift; preserves the sign bit after shift
-// 3. ror = right rotation
+// for lsl and lsr, if negative, then take the positive value before shift
 
 // -------------- logical shift left --------------------
 
@@ -152,10 +147,8 @@ int32_t ror_32(int32_t val, uint32_t shift) {
 }
 
 // ------------------------------------- CUSTOM HELPER FUNCTIONS ---------------------------------------------------
-
-// 64 bit register
 int64_t shift_64(uint32_t instruction, int64_t rm_val, uint32_t shift) {
-    // case: shift (bit position 22-23 in register)
+    // case: shift (22-23)
     switch (get_bits(instruction, 22, 23)) {
         case LSL:
             return lsl_64(rm_val, shift);
@@ -168,9 +161,8 @@ int64_t shift_64(uint32_t instruction, int64_t rm_val, uint32_t shift) {
     }
 }
 
-// 32 bit register
 int32_t shift_32(uint32_t instruction, int32_t rm_val, uint32_t shift) {
-    // case : shift (bit position 22-23 in register)
+    // case : shift (22-23)
     switch (get_bits(instruction, 22, 23)) {
         case LSL:
             return lsl_32(rm_val, shift);
@@ -185,12 +177,10 @@ int32_t shift_32(uint32_t instruction, int32_t rm_val, uint32_t shift) {
 
 // ------------------------------------- Executing Operations ----------------------------------------------------
 
-// perform arithemtic instructions on the register
 void dpi_register_arithmetic(uint32_t instruction) {
     general_purpose_register *rd = find_register(get_bits(instruction, 0, 4));
     general_purpose_register *rn = find_register(get_bits(instruction, 5, 9));
     general_purpose_register *rm = find_register(get_bits(instruction, 16, 20));
-
     // amount of shift needed (operand)
     uint32_t shift = get_bits(instruction, 10, 15);
 
@@ -215,7 +205,6 @@ void dpi_register_arithmetic(uint32_t instruction) {
     }
 }
 
-// perform logical operation on the register
 void dpi_register_logic(uint32_t instruction) {
     general_purpose_register *rd = find_register(get_bits(instruction, 0, 4));
     general_purpose_register *rn = find_register(get_bits(instruction, 5, 9));
@@ -287,15 +276,13 @@ void dpi_register_logic(uint32_t instruction) {
                     }
                 }
 
-                // ANDS and BICS need update to the pSTATE. 
-
-                // updates negative cond. flag (equivalent to the sign bit of the result)
+                // updates negative cond. flag
                 p_state_register.negative_condition_flag = get_bit_register64(res, 63);
-                // updates pState zero cond. flag (check zero register)
+                // updates pState zero cond. flag
                 p_state_register.zero_condition_flag = res == 0;
-                // updates pState carry cond. flag (set to 0)
+                // updates pState carry cond. flag
                 p_state_register.carry_condition_flag = 0;
-                // updates pState sign overflow cond. flag (set to 0)
+                // updates pState sign overflow cond. flag
                 p_state_register.overflow_condition_flag = 0;
                 break;
             }
@@ -363,23 +350,19 @@ void dpi_register_logic(uint32_t instruction) {
                     }
                 }
 
-                // ANDS and BICS need update to the pSTATE. 
-
-                // updates negative cond. flag (equivalent to the sign bit of the result)
+                // updates negative cond. flag
                 p_state_register.negative_condition_flag = get_bit_register32(res, 31);
-                // updates pState zero cond. flag (check zero register)
+                // updates pState zero cond. flag
                 p_state_register.zero_condition_flag = res == 0;
-                // updates pState carry cond. flag (set to 0)
+                // updates pState carry cond. flag
                 p_state_register.carry_condition_flag = 0;
-                // updates pState sign overflow cond. flag (set to 0)
+                // updates pState sign overflow cond. flag
                 p_state_register.overflow_condition_flag = 0;
                 break;
             }
         }
     }
 }
-
-// perform multiplication operation on the register
 
 void dpi_register_multiply(uint32_t instruction) {
     general_purpose_register *rd = find_register(get_bits(instruction, 0, 4));
@@ -394,12 +377,10 @@ void dpi_register_multiply(uint32_t instruction) {
         int64_t rm_val = read_64(rm);
 
         if (get_bit_register32(instruction, 15) == MULADD) {
-            // multiply add (MULADD operation)
-            // result = Ra + Rn * Rm
+            // multiply add
             write_64(rd, ra_val + (rn_val * rm_val));
         } else {
-            // multiply sub (MULSUB operation)
-            // result = Ra - Rn * Rm
+            // multiply sub
             write_64(rd, ra_val - (rn_val * rm_val));
         }
 
@@ -410,12 +391,10 @@ void dpi_register_multiply(uint32_t instruction) {
         int32_t rm_val = read_32(rm);
 
         if (get_bit_register32(instruction, 15) == MULADD) {
-            // multiply add (MULADD operation)
-            // result = Ra + Rn * Rm
+            // multiply add
             write_32(rd, ra_val + (rn_val * rm_val));
         } else {
-            // multiply sub (MULSUB operation)
-            // result = Ra - Rn * Rm
+            // multiply sub
             write_32(rd, ra_val - (rn_val * rm_val));
         }
     }
@@ -440,6 +419,6 @@ void execute_DPIRegister(uint32_t instruction) {
         }
     }
 
-    // Increment the Program Counter by 4.
+    // Increment Program Counter
     program_counter += 4;
 }
