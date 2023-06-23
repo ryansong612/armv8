@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+
 #include "../BitUtils/custombit.h"
 #include "dpi-immediate.h"
 #include "emulate.h"
@@ -56,7 +57,6 @@ general_purpose_register* find_register(uint32_t key) {
             return general_purpose_register_list[i];
         }
     }
-
     return NULL;
 }
 

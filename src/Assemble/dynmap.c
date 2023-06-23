@@ -46,6 +46,7 @@ void dynmap_add(dynmap map, char* key, uint8_t value) {
     (map->size)++;
 }
 
+// Retrieves a value from the map using the key
 uint32_t dynmap_get(dynmap map, char* key) {
     for (int i = 0; i < map->size; i++) {
         if (strcmp(key, map->entries[i]->key) == 0) {

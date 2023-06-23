@@ -103,11 +103,9 @@ int main(int argc, char **argv) {
     // Go back to the beginning of infile
     rewind(infile);
 
-
     // Second pass: assemble instructions
     program_counter = 0;
     while (fgets(line, MAX_LINE_LENGTH, infile) != NULL) {
-        printf("%s\n", line);
         // Remove '\n'
         line[strlen(line) - 1] = '\0';
 
@@ -131,7 +129,6 @@ int main(int argc, char **argv) {
 
         program_counter += 4;
     }
-
     fclose(infile);
     fclose(outfile);
     free(line);

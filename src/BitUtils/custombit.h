@@ -15,5 +15,4 @@ int64_t extend_sign_bit(uint32_t num, int num_bits);
 void print_binary(uint64_t num);
 uint32_t shrink32(uint32_t num, int num_bits);
 
-
 #endif //ARMV8_32_CUSTOMBIT_H

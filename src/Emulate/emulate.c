@@ -132,10 +132,13 @@ void terminate(uint8_t *memory, char *output_path) {
         sprintf(str, "%016lx", read_64(general_purpose_register_list[i]));
         fputs(str, out); putc( '\n', out);
     }
+    
+    // print out PC
     fputs("PC = ", out);
     char pc[17];
     sprintf(pc, "%016lx", program_counter);
     fputs(pc, out); putc( '\n', out);
+
     // print out PSTATE
     fputs("PSTATE: ", out);
     if (p_state_register.negative_condition_flag) {

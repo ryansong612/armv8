@@ -1,10 +1,11 @@
-#include "assembleBranches.h"
 #include "dynmap.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdint.h>
+
+#include "assembleBranches.h"
 #include "../BitUtils/custombit.h"
 
 #define BRANCH_UNCONDITIONAL_TEMPLATE 335544320

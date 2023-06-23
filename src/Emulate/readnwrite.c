@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+
 #include "emulate.h"
 #include "../BitUtils/custombit.h"
 
@@ -22,10 +23,6 @@ int32_t read_32(general_purpose_register *gpr) {
     return (int32_t) gpr -> val;
 }
 
-// int32_t read_32(GeneralPurposeRegister *gpr) {
-//     return (int32_t) read_64(gpr);
-// }
-
 // writes a 64-bit int to the designated gpr
 // returns false if attempted to write 64-bit to 32-bit accessed register
 bool write_64(general_purpose_register *gpr, int64_t num) {
@@ -33,12 +30,10 @@ bool write_64(general_purpose_register *gpr, int64_t num) {
         // bit-width access is 32-bit, unable to write
         return false;
     }
-
     if (gpr -> id == 31) {
         // writes to Zero Register are ignored
         return false;
     }
-
     gpr -> val = num;
     return true;
 }
@@ -49,7 +44,6 @@ bool write_32(general_purpose_register *gpr, int32_t num) {
         // writes to Zero Register are ignored
         return false;
     }
-
     gpr -> val = num & 0xFFFFFFFFLL;
     return true;
 }
